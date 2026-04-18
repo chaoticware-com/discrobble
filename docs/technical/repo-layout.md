@@ -1,0 +1,91 @@
+# Repo Layout
+
+## Monorepo Shape
+
+The project should stay in a single public GitHub repository with this top-level structure:
+
+```text
+.
+├── AGENTS.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── SECURITY.md
+├── .coderabbit.yaml
+├── .github/
+│   └── workflows/
+├── androidApp/
+├── iosApp/
+├── shared/
+├── backend/
+│   └── worker/
+├── docs/
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle/
+│   └── libs.versions.toml
+├── package.json
+└── pnpm-workspace.yaml
+```
+
+## Directory Responsibilities
+
+### `shared/`
+
+- Kotlin Multiplatform business logic only.
+- Owns domain models, repositories, auth/session rules, persistence abstractions, local database schema, networking clients, and scrobble logic.
+- Does not own platform UI rendering, camera access, microphone access, or direct secret storage implementations.
+
+### `androidApp/`
+
+- Android application shell implemented with `Jetpack Compose`.
+- Owns Android permission flows, Activity and lifecycle integration, barcode scanning bridge, Android ShazamKit bridge, and Android secure storage adapter.
+- Consumes shared services and models from `shared/`.
+
+### `iosApp/`
+
+- iPhone application shell implemented with `SwiftUI`.
+- Owns deep links, permission flows, camera integration, ShazamKit bindings, and Keychain-backed secure storage adapter.
+- Consumes shared services and models from `shared/`.
+
+### `backend/worker/`
+
+- Stateless backend proxy implemented in `TypeScript`.
+- Owns Last.fm callback handling, Discogs callback handling, Last.fm request signing, Discogs proxy endpoints, and runtime secret access.
+- Does not own durable user data, databases, or background processing.
+
+### `.github/workflows/`
+
+- Sole automation surface for CI, preview deploys, production deploys, and releases.
+- Must remain publicly visible in the repository.
+- Holds the canonical workflows that define what code is built and what code is shipped.
+
+### `docs/`
+
+- Source of truth for product, architecture, delivery, policy, and decisions.
+- Any structural or behavioral change must update this tree in the same change.
+
+## Tooling Boundaries
+
+- Root Kotlin build uses `Gradle Kotlin DSL`.
+- Shared Kotlin dependency versions live in `gradle/libs.versions.toml`.
+- Root JavaScript workspace uses `pnpm`.
+- Worker-specific dependencies and scripts live under `backend/worker/`.
+- `CodeRabbit` configuration lives at repo root in `.coderabbit.yaml`.
+
+## Ownership Rules
+
+- Shared code owns business logic and contracts.
+- Native apps own user interface and platform APIs.
+- The Worker owns external callback handling and signed/proxied HTTP requests only.
+- GitHub workflows own automation, deployment sequencing, and release provenance.
+- Docs own the approved operating model and must be updated with every material change.
+
+## Boundaries To Preserve
+
+- Do not put UI rendering logic into `shared/`.
+- Do not put provider client secrets into mobile code or version-controlled config files.
+- Do not put durable user state into `backend/worker/`.
+- Do not create a second automation system outside `.github/workflows/`.
+- Do not split governance docs away from the repo root.
+

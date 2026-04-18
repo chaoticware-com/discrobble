@@ -1,0 +1,29 @@
+.idea/
+.DS_Store
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Kotlin / Gradle
+.gradle/
+build/
+out/
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+
+# Local databases and caches
+*.db
+*.sqlite
+*.sqlite3
+.cache/
