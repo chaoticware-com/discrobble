@@ -1,5 +1,7 @@
 # Roadmap
 
+This document owns phase sequencing and exit criteria. The current actionable task order lives in [Implementation Backlog](implementation-backlog.md).
+
 ## Phase 0: Public Repo Controls and Transparency
 
 ### Goals
@@ -118,4 +120,4 @@
 
 ## Current Recommendation
 
-Start with Phase 0 and do not scaffold the full app until both the public repo controls and the integration spikes confirm the delivery model, auth handoff, and recognition assumptions documented in this repo.
+Start with Phase 0 and use [Implementation Backlog](implementation-backlog.md) as the execution order for the first delivery slices. Do not scaffold the full app until both the public repo controls and the integration spikes confirm the delivery model, auth handoff, and recognition assumptions documented in this repo.

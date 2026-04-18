@@ -24,6 +24,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 
 - Repository status: docs-first bootstrap only.
 - Product definition: MVP scope, user flows, architecture, API contracts, stack, repo layout, CI/CD, and ADRs are documented.
+- Delivery planning status: a tactical implementation backlog now exists alongside the roadmap.
 - Implementation status: no code or app scaffolding has been created yet.
 - This README is intentionally brief; detailed behavior and policy live in the docs it links to.
 
@@ -51,6 +52,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 ### Delivery
 
 - [Roadmap](docs/delivery/roadmap.md)
+- [Implementation Backlog](docs/delivery/implementation-backlog.md)
 
 ### Decisions
 
@@ -77,5 +79,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 - Concrete implementation stack: [Stack](docs/technical/stack.md)
 - System boundaries and data ownership: [Architecture](docs/technical/architecture.md)
 - Repo structure and code ownership boundaries: [Repo Layout](docs/technical/repo-layout.md)
+- Phase sequence and exit criteria: [Roadmap](docs/delivery/roadmap.md)
+- Current implementation task order: [Implementation Backlog](docs/delivery/implementation-backlog.md)
 - CI, deploys, releases, and public verification model: [CI/CD and Provenance](docs/technical/ci-cd-and-provenance.md)
 - Decision rationale: ADRs in [docs/decisions](docs/decisions)

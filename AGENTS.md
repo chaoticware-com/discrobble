@@ -36,6 +36,7 @@ This currently includes:
 - `docs/technical/stack.md`
 - `docs/technical/testing-strategy.md`
 - `docs/delivery/roadmap.md`
+- `docs/delivery/implementation-backlog.md`
 - `docs/decisions/ADR-001-no-server-data.md`
 - `docs/decisions/ADR-002-kmp-native-ui.md`
 - `docs/decisions/ADR-003-assisted-session-flow.md`
