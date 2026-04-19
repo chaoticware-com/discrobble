@@ -12,22 +12,21 @@ This document owns the current actionable work order for Discrobble. Phase seque
 ## Current Status
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
-- The public GitHub repository now exists under `chaoticware-com`, and baseline repository security settings are enabled.
+- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings and `main` branch protection enabled.
 - No application code, CI workflows, or deployment configuration has been implemented yet.
 - The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Protect `main` and install the required review gates.
-2. Add the first `GitHub Actions` workflows for docs and workflow validation.
-3. Set up preview and production deployment environments.
-4. Start the backend and auth spike scaffolding.
+1. Add the first `GitHub Actions` workflows for docs and workflow validation.
+2. Set up preview and production deployment environments.
+3. Start the backend and auth spike scaffolding.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
 - [x] B0.1 Create the public GitHub repository, push `main`, and enable baseline repository security settings.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Security](../../SECURITY.md)
-- [ ] B0.2 Protect `main` with pull-request-only merges, required status checks, and no direct pushes.
+- [x] B0.2 Protect `main` with pull-request-only merges, required status checks, and no direct pushes.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Contributing](../../CONTRIBUTING.md)
 - [ ] B0.3 Add `.coderabbit.yaml` and `.github/CODEOWNERS` so automated and human review policy becomes enforceable in-repo.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-009](../decisions/ADR-009-coderabbit-required-pr-gate.md)
