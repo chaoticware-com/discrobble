@@ -26,21 +26,29 @@ GitHub is the public source of truth for Discrobble's code review, CI, deploymen
 
 Runs on pull requests and pushes to `main`.
 
+Phase 0 implements the first required checks only:
+
 - docs consistency checks
+- workflow linting
+
+Additional lanes are added as the corresponding code scaffolding lands:
+
 - shared Kotlin build and tests
 - Android build and tests
 - iOS build and smoke tests
 - Worker lint and tests
-- workflow linting
 
-Required status checks should map to these lanes:
+Required status checks in Phase 0 are:
 
 - `ci/docs`
+- `ci/workflows`
+
+The required status checks later expand to:
+
 - `ci/shared`
 - `ci/android`
 - `ci/ios`
 - `ci/worker`
-- `ci/workflows`
 
 ### `preview-worker.yml`
 
@@ -123,4 +131,3 @@ GitHub artifact attestations are required for deployable artifacts where support
 - Production runtime secrets are set through the GitHub-controlled deployment path and stored in Cloudflare as Worker secrets.
 - Direct dashboard edits to production config or secrets are out of policy.
 - Preview deployments may exist, but only through the GitHub Actions pipeline.
-

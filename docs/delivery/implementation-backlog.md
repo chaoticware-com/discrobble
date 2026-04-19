@@ -12,15 +12,14 @@ This document owns the current actionable work order for Discrobble. Phase seque
 ## Current Status
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
-- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings, `main` branch protection, and in-repo review controls enabled.
+- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings, `main` branch protection, in-repo review controls, and the first GitHub Actions checks enabled.
 - No application code, CI workflows, or deployment configuration has been implemented yet.
 - The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Add the first `GitHub Actions` workflows for docs and workflow validation.
-2. Set up preview and production deployment environments.
-3. Start the backend and auth spike scaffolding.
+1. Set up preview and production deployment environments.
+2. Start the backend and auth spike scaffolding.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -30,7 +29,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Contributing](../../CONTRIBUTING.md)
 - [x] B0.3 Add `.coderabbit.yaml` and `.github/CODEOWNERS` so automated and human review policy becomes enforceable in-repo.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-009](../decisions/ADR-009-coderabbit-required-pr-gate.md)
-- [ ] B0.4 Add `ci.yml` with `ci/docs` and `ci/workflows` as the first required checks.
+- [x] B0.4 Add `ci.yml` with `ci/docs` and `ci/workflows` as the first required checks.
   Owner docs: [Testing Strategy](../technical/testing-strategy.md), [CI/CD and Provenance](../technical/ci-cd-and-provenance.md)
 - [ ] B0.5 Add `preview-worker.yml` and `release.yml` skeletons with GitHub environments and tag-triggered production release flow.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-010](../decisions/ADR-010-tagged-releases-and-attestations.md)
