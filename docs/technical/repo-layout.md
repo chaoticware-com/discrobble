@@ -17,13 +17,24 @@ The project should stay in a single public GitHub repository with this top-level
 ├── androidApp/
 ├── iosApp/
 ├── shared/
+│   ├── auth/
+│   ├── catalog/
+│   ├── di/
+│   ├── domain/
+│   ├── network/
+│   ├── persistence/
+│   ├── scrobble/
+│   └── session/
 ├── backend/
 │   └── worker/
 ├── docs/
 ├── build.gradle.kts
-├── settings.gradle.kts
+├── gradlew
+├── gradlew.bat
 ├── gradle/
-│   └── libs.versions.toml
+│   ├── libs.versions.toml
+│   └── wrapper/
+├── settings.gradle.kts
 ├── package.json
 └── pnpm-workspace.yaml
 ```
@@ -33,6 +44,7 @@ The project should stay in a single public GitHub repository with this top-level
 ### `shared/`
 
 - Kotlin Multiplatform business logic only.
+- Split into `domain`, `auth`, `catalog`, `session`, `scrobble`, `persistence`, `network`, and `di` submodules.
 - Owns domain models, repositories, auth/session rules, persistence abstractions, local database schema, networking clients, and scrobble logic.
 - Does not own platform UI rendering, camera access, microphone access, or direct secret storage implementations.
 
@@ -69,6 +81,7 @@ The project should stay in a single public GitHub repository with this top-level
 
 - Root Kotlin build uses `Gradle Kotlin DSL`.
 - Shared Kotlin dependency versions live in `gradle/libs.versions.toml`.
+- The repository-owned Gradle entrypoint is the checked-in wrapper at `./gradlew`.
 - Root JavaScript workspace uses `pnpm`.
 - Worker-specific dependencies and scripts live under `backend/worker/`.
 - `CodeRabbit` configuration lives at repo root in `.coderabbit.yaml`.
@@ -88,4 +101,3 @@ The project should stay in a single public GitHub repository with this top-level
 - Do not put durable user state into `backend/worker/`.
 - Do not create a second automation system outside `.github/workflows/`.
 - Do not split governance docs away from the repo root.
-

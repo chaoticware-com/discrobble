@@ -17,11 +17,20 @@
 .gradle/
 build/
 out/
+local.properties
 
 # Node / pnpm
 node_modules/
 .pnpm-store/
 .wrangler/
+
+# Apple / Swift
+DerivedData/
+.build/
+.swiftpm/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
 
 # Local databases and caches
 *.db

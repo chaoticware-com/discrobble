@@ -13,12 +13,13 @@ This document owns the current actionable work order for Discrobble. Phase seque
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
 - Phase 0 repo controls are now in place under `chaoticware-com`, including baseline repository security settings, protected `main`, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, configured GitHub environments, and release provenance scaffolding.
-- The first Worker scaffold now exists under `backend/worker/`, while mobile apps and shared modules are still unimplemented.
+- The first Worker scaffold now exists under `backend/worker/`.
+- The Gradle root, checked-in wrapper, shared KMP module tree, Android Compose shell, and iPhone source scaffold now exist.
 - The immediate focus is Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp`.
+1. Add the minimal iPhone shell needed for deep-link auth callback handoff and secure token storage integration.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -49,7 +50,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
 
 - [x] B1.1 Scaffold `backend/worker` with `TypeScript`, `Hono`, `Wrangler`, and a minimal health route.
   Owner docs: [Stack](../technical/stack.md), [Repo Layout](../technical/repo-layout.md), [ADR-006](../decisions/ADR-006-cloudflare-workers-hono-backend.md)
-- [ ] B1.2 Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp` without building product features yet.
+- [x] B1.2 Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp` without building product features yet.
   Owner docs: [Architecture](../technical/architecture.md), [Repo Layout](../technical/repo-layout.md), [ADR-002](../decisions/ADR-002-kmp-native-ui.md)
 - [ ] B1.3 Add the minimal iPhone shell needed for deep-link auth callback handoff and secure token storage integration.
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md)
