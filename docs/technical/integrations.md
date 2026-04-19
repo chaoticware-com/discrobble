@@ -96,16 +96,33 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 
 ### Platform Strategy
 
-- iPhone: use native ShazamKit integration through Swift bindings.
+- iPhone: use native ShazamKit integration through Swift bindings and `SHManagedSession` for the MVP spike shell.
 - Android: use native ShazamKit Android integration through the vendor AAR and a Kotlin bridge.
 
 ### Data Flow
 
 1. User starts listening in an active session.
-2. Native layer captures audio in the foreground.
-3. ShazamKit returns candidate song matches.
+2. Native iPhone shell requests microphone permission through `AVAudioApplication` and starts a foreground `SHManagedSession` capture.
+3. ShazamKit returns `SHSession.Result`, where successful matches contain a ranked `mediaItems` array.
 4. Shared session logic normalizes the result and maps it to the selected Discogs tracklist.
 5. Session engine either auto-advances or asks the user to confirm.
+
+### Current iPhone Spike Notes
+
+- The iPhone shell currently uses a one-shot `SHManagedSession.result()` call to prove end-to-end candidate capture before the shared session engine exists.
+- The observed ranked candidate shape exposes:
+  - `title`
+  - `subtitle`
+  - `artist`
+  - `shazamID`
+  - `appleMusicID`
+  - `artworkURL`
+  - `webURL`
+  - `genres`
+  - `matchOffset`
+  - `predictedCurrentMatchOffset`
+  - `frequencySkew`
+  - `confidence` on iOS `18.4+`
 
 ### Fallback Behavior
 

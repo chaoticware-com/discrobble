@@ -25,7 +25,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 - Repository status: Phase 0 repo controls are implemented under `chaoticware-com`, including protected `main`, initial GitHub Actions/release workflows, GitHub environments, and release provenance scaffolding.
 - Product definition: MVP scope, user flows, architecture, API contracts, stack, repo layout, CI/CD, and ADRs are documented.
 - Delivery planning status: a tactical implementation backlog now exists alongside the roadmap.
-- Implementation status: the Worker runtime scaffold, Gradle/KMP root, shared module tree, and native auth shells now exist. The Worker and both native shells now implement the Last.fm and Discogs auth spikes end to end, the Worker exposes signed Last.fm write proxy endpoints with normalized error handling, and the Worker now also proxies Discogs identity, collection, and database search reads. ShazamKit and the remaining platform spikes are still pending.
+- Implementation status: the Worker runtime scaffold, Gradle/KMP root, shared module tree, and native auth shells now exist. The Worker and both native shells now implement the Last.fm and Discogs auth spikes end to end, the Worker exposes signed Last.fm write proxy endpoints with normalized error handling, the Worker now also proxies Discogs identity, collection, and database search reads, and the iPhone shell now exposes a one-shot ShazamKit spike that surfaces ranked candidate metadata. Android ShazamKit and the broader product foundation are still pending.
 - This README is intentionally brief; detailed behavior and policy live in the docs it links to.
 
 ## Documentation Index

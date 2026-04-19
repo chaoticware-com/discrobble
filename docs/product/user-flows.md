@@ -109,7 +109,7 @@
 
 1. User taps `Listen`.
 2. App starts a foreground recognition loop using native ShazamKit bindings.
-3. Recognition results are normalized and matched against tracks on the selected Discogs release.
+3. Recognition returns ranked song candidates with core fields such as title, artist, and timing offsets, and the app normalizes them against tracks on the selected Discogs release.
 4. If a strong match aligns with the expected track or a plausible next track:
    - app updates the current track
    - app sends `updateNowPlaying` to Last.fm
@@ -127,7 +127,7 @@
 ### Main Path
 
 1. Recognition result conflicts with the expected track order or returns low confidence.
-2. App presents the top candidate track matches and the current expected track.
+2. App presents the top candidate track matches, including title, artist, and timing-offset context, alongside the current expected track.
 3. User confirms the correct track, skips forward, skips backward, or switches side or disc manually.
 4. App updates the session timeline and only scrobbles confirmed tracks.
 
@@ -169,4 +169,3 @@
 
 - Local history remains on-device only.
 - No session summary is uploaded to a Discrobble backend.
-
