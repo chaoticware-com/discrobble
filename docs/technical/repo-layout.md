@@ -16,6 +16,8 @@ The project should stay in a single public GitHub repository with this top-level
 │   └── workflows/
 ├── androidApp/
 ├── iosApp/
+│   ├── Discrobble.xcodeproj/
+│   └── Discrobble/
 ├── shared/
 │   ├── auth/
 │   ├── catalog/
@@ -58,6 +60,8 @@ The project should stay in a single public GitHub repository with this top-level
 ### `iosApp/`
 
 - iPhone application shell implemented with `SwiftUI`.
+- Tracks the checked-in `Discrobble.xcodeproj` entrypoint used to open and run the iPhone shell in `Xcode`.
+- Keeps the app source tree under `iosApp/Discrobble/`, alongside the project metadata bundle.
 - Owns deep links, permission flows, camera integration, ShazamKit bindings, and Keychain-backed secure storage adapter.
 - Consumes shared services and models from `shared/`.
 

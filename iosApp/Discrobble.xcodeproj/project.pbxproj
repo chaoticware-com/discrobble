@@ -1,0 +1,326 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B00000000000000000000010 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* AppModel.swift */; };
+		B00000000000000000000011 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* ContentView.swift */; };
+		B00000000000000000000012 /* DiscrobbleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* DiscrobbleApp.swift */; };
+		B00000000000000000000013 /* AuthCallbackParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* AuthCallbackParser.swift */; };
+		B00000000000000000000014 /* AuthCallbackResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000014 /* AuthCallbackResult.swift */; };
+		B00000000000000000000015 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000015 /* AuthProvider.swift */; };
+		B00000000000000000000016 /* DiscogsAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000016 /* DiscogsAuthCoordinator.swift */; };
+		B00000000000000000000017 /* LastfmAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000017 /* LastfmAuthCoordinator.swift */; };
+		B00000000000000000000018 /* PendingAuthCallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000018 /* PendingAuthCallback.swift */; };
+		B00000000000000000000019 /* ShazamRecognitionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000019 /* ShazamRecognitionCoordinator.swift */; };
+		B0000000000000000000001A /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001A /* KeychainTokenStore.swift */; };
+		B0000000000000000000001B /* PendingAuthAttemptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001B /* PendingAuthAttemptStore.swift */; };
+		B0000000000000000000001C /* StoredIntegrationTokenSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001C /* StoredIntegrationTokenSet.swift */; };
+		B0000000000000000000001D /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001D /* AppConfiguration.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A00000000000000000000010 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		A00000000000000000000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A00000000000000000000012 /* DiscrobbleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscrobbleApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000013 /* AuthCallbackParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthCallbackParser.swift; sourceTree = "<group>"; };
+		A00000000000000000000014 /* AuthCallbackResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthCallbackResult.swift; sourceTree = "<group>"; };
+		A00000000000000000000015 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
+		A00000000000000000000016 /* DiscogsAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscogsAuthCoordinator.swift; sourceTree = "<group>"; };
+		A00000000000000000000017 /* LastfmAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastfmAuthCoordinator.swift; sourceTree = "<group>"; };
+		A00000000000000000000018 /* PendingAuthCallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAuthCallback.swift; sourceTree = "<group>"; };
+		A00000000000000000000019 /* ShazamRecognitionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShazamRecognitionCoordinator.swift; sourceTree = "<group>"; };
+		A0000000000000000000001A /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
+		A0000000000000000000001B /* PendingAuthAttemptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAuthAttemptStore.swift; sourceTree = "<group>"; };
+		A0000000000000000000001C /* StoredIntegrationTokenSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredIntegrationTokenSet.swift; sourceTree = "<group>"; };
+		A0000000000000000000001D /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		A0000000000000000000001E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A0000000000000000000001F /* Discrobble.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Discrobble.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C00000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000004 /* Discrobble */,
+				A00000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001F /* Discrobble.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000004 /* Discrobble */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000005 /* App */,
+				A00000000000000000000006 /* Auth */,
+				A00000000000000000000007 /* Recognition */,
+				A00000000000000000000008 /* Security */,
+				A00000000000000000000009 /* Support */,
+			);
+			path = Discrobble;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000005 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000010 /* AppModel.swift */,
+				A00000000000000000000011 /* ContentView.swift */,
+				A00000000000000000000012 /* DiscrobbleApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000006 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000013 /* AuthCallbackParser.swift */,
+				A00000000000000000000014 /* AuthCallbackResult.swift */,
+				A00000000000000000000015 /* AuthProvider.swift */,
+				A00000000000000000000016 /* DiscogsAuthCoordinator.swift */,
+				A00000000000000000000017 /* LastfmAuthCoordinator.swift */,
+				A00000000000000000000018 /* PendingAuthCallback.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000007 /* Recognition */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000019 /* ShazamRecognitionCoordinator.swift */,
+			);
+			path = Recognition;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000008 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001A /* KeychainTokenStore.swift */,
+				A0000000000000000000001B /* PendingAuthAttemptStore.swift */,
+				A0000000000000000000001C /* StoredIntegrationTokenSet.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000009 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001D /* AppConfiguration.swift */,
+				A0000000000000000000001E /* Info.plist */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D00000000000000000000001 /* Discrobble */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E00000000000000000000002 /* Build configuration list for PBXNativeTarget "Discrobble" */;
+			buildPhases = (
+				C00000000000000000000001 /* Sources */,
+				C00000000000000000000002 /* Frameworks */,
+				C00000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Discrobble;
+			productName = Discrobble;
+			productReference = A0000000000000000000001F /* Discrobble.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+				ORGANIZATIONNAME = Chaoticware;
+				TargetAttributes = {
+					D00000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = E00000000000000000000001 /* Build configuration list for PBXProject "Discrobble" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A00000000000000000000002;
+			productRefGroup = A00000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D00000000000000000000001 /* Discrobble */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C00000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C00000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000010 /* AppModel.swift in Sources */,
+				B00000000000000000000011 /* ContentView.swift in Sources */,
+				B00000000000000000000012 /* DiscrobbleApp.swift in Sources */,
+				B00000000000000000000013 /* AuthCallbackParser.swift in Sources */,
+				B00000000000000000000014 /* AuthCallbackResult.swift in Sources */,
+				B00000000000000000000015 /* AuthProvider.swift in Sources */,
+				B00000000000000000000016 /* DiscogsAuthCoordinator.swift in Sources */,
+				B00000000000000000000017 /* LastfmAuthCoordinator.swift in Sources */,
+				B00000000000000000000018 /* PendingAuthCallback.swift in Sources */,
+				B00000000000000000000019 /* ShazamRecognitionCoordinator.swift in Sources */,
+				B0000000000000000000001A /* KeychainTokenStore.swift in Sources */,
+				B0000000000000000000001B /* PendingAuthAttemptStore.swift in Sources */,
+				B0000000000000000000001C /* StoredIntegrationTokenSet.swift in Sources */,
+				B0000000000000000000001D /* AppConfiguration.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F00000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F00000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		F00000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Discrobble/Support/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chaoticware.discrobble.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F00000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Discrobble/Support/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chaoticware.discrobble.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E00000000000000000000001 /* Build configuration list for PBXProject "Discrobble" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000000001 /* Debug */,
+				F00000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E00000000000000000000002 /* Build configuration list for PBXNativeTarget "Discrobble" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000000003 /* Debug */,
+				F00000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A00000000000000000000001 /* Project object */;
+}

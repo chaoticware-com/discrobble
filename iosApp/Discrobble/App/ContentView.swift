@@ -258,8 +258,10 @@ private struct ShazamRecognitionCard: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .environmentObject(AppModel())
-        .environmentObject(ShazamRecognitionCoordinator())
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .environmentObject(AppModel())
+            .environmentObject(ShazamRecognitionCoordinator())
+    }
 }
