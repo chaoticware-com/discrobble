@@ -8,6 +8,7 @@ import com.chaoticware.discrobble.android.auth.AuthShellStateHolder
 import com.chaoticware.discrobble.android.auth.DiscogsAuthClient
 import com.chaoticware.discrobble.android.auth.EncryptedPendingAuthAttemptStore
 import com.chaoticware.discrobble.android.auth.LastfmAuthClient
+import com.chaoticware.discrobble.android.recognition.ShazamRecognitionStateHolder
 import com.chaoticware.discrobble.android.security.AndroidKeystoreTokenStore
 
 class MainActivity : ComponentActivity() {
@@ -20,13 +21,18 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val shazamRecognitionStateHolder: ShazamRecognitionStateHolder by lazy {
+        ShazamRecognitionStateHolder(applicationContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         authShellStateHolder.handleIncomingIntent(intent)
 
         setContent {
             DiscrobbleAndroidShell(
-                stateHolder = authShellStateHolder,
+                authStateHolder = authShellStateHolder,
+                shazamStateHolder = shazamRecognitionStateHolder,
             )
         }
     }
@@ -35,5 +41,10 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         authShellStateHolder.handleIncomingIntent(intent)
+    }
+
+    override fun onDestroy() {
+        shazamRecognitionStateHolder.dispose()
+        super.onDestroy()
     }
 }

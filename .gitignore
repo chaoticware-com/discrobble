@@ -19,6 +19,7 @@
 build/
 out/
 local.properties
+libs/*.aar
 
 # Node / pnpm
 node_modules/

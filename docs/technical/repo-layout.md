@@ -28,6 +28,7 @@ The project should stay in a single public GitHub repository with this top-level
 ├── backend/
 │   └── worker/
 ├── docs/
+├── libs/
 ├── build.gradle.kts
 ├── gradlew
 ├── gradlew.bat
@@ -76,6 +77,12 @@ The project should stay in a single public GitHub repository with this top-level
 
 - Source of truth for product, architecture, delivery, policy, and decisions.
 - Any structural or behavioral change must update this tree in the same change.
+
+### `libs/`
+
+- Holds local-only third-party Android AAR drops that cannot be resolved from public Maven repositories.
+- Currently reserved for the Apple ShazamKit Android SDK at `libs/shazamkit-android-release.aar`.
+- AAR files remain gitignored; only the directory placeholder is tracked.
 
 ## Tooling Boundaries
 

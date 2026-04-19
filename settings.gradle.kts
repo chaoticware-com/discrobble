@@ -12,6 +12,9 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
+        flatDir {
+            dirs(rootDir.resolve("libs"))
+        }
         google()
         mavenCentral()
     }

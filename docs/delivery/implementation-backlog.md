@@ -20,11 +20,12 @@ This document owns the current actionable work order for Discrobble. Phase seque
 - The Worker and both native shells now also complete the Discogs auth spike end to end, including the browser-opened start route, encrypted request-token cookie handoff, encrypted callback payloads, and secure local token-pair storage.
 - The Worker now also proxies `/discogs/me`, `/discogs/collection`, and `/discogs/search` with OAuth-signed requests, normalized release payloads, and public-response validation against a real collection page and barcode search result.
 - The iPhone shell now also exposes a one-shot ShazamKit spike using `SHManagedSession`, microphone permission handling through `AVAudioApplication`, and a ranked candidate view that confirms the current native match shape.
+- The Android shell now also exposes a one-shot ShazamKit spike wired for Apple's local AAR-based SDK, records PCM `16-bit` mono microphone audio, and normalizes the documented `MatchResult.Match.matchedMediaItems` candidate shape while surfacing an actionable unavailable state when the local SDK or developer token is missing.
 - The immediate focus is Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Implement the Android ShazamKit spike and confirm candidate result shape.
+1. Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -71,7 +72,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [Integrations](../technical/integrations.md), [Testing Strategy](../technical/testing-strategy.md)
 - [x] B1.9 Implement the iPhone ShazamKit spike and confirm candidate result shape.
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)
-- [ ] B1.10 Implement the Android ShazamKit spike and confirm candidate result shape.
+- [x] B1.10 Implement the Android ShazamKit spike and confirm candidate result shape.
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)
 - [ ] B1.11 Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
   Owner docs: [API Contracts](../technical/api-contracts.md), [Data Model](../technical/data-model.md), [Testing Strategy](../technical/testing-strategy.md)

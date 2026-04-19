@@ -97,15 +97,16 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 ### Platform Strategy
 
 - iPhone: use native ShazamKit integration through Swift bindings and `SHManagedSession` for the MVP spike shell.
-- Android: use native ShazamKit Android integration through the vendor AAR and a Kotlin bridge.
+- Android: use native ShazamKit Android integration through the vendor AAR and a Kotlin bridge, while keeping the repo buildable when the Apple AAR is absent from source control.
 
 ### Data Flow
 
 1. User starts listening in an active session.
-2. Native iPhone shell requests microphone permission through `AVAudioApplication` and starts a foreground `SHManagedSession` capture.
-3. ShazamKit returns `SHSession.Result`, where successful matches contain a ranked `mediaItems` array.
-4. Shared session logic normalizes the result and maps it to the selected Discogs tracklist.
-5. Session engine either auto-advances or asks the user to confirm.
+2. Native shell requests microphone permission and performs a foreground recognition attempt.
+3. iPhone currently uses `SHManagedSession.result()`, while Android currently records a one-shot PCM `AudioRecord` sample and calls `Session.match(signature)` through the Apple Android AAR.
+4. ShazamKit returns ranked candidates: iPhone through `SHSession.Result.mediaItems`, Android through `MatchResult.Match.matchedMediaItems`.
+5. Shared session logic normalizes the result and maps it to the selected Discogs tracklist.
+6. Session engine either auto-advances or asks the user to confirm.
 
 ### Current iPhone Spike Notes
 
@@ -123,6 +124,29 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
   - `predictedCurrentMatchOffset`
   - `frequencySkew`
   - `confidence` on iOS `18.4+`
+
+### Current Android Spike Notes
+
+- The Android shell currently uses a one-shot microphone capture path to prove end-to-end candidate handling before the shared session engine exists.
+- The Apple Android SDK is loaded from a local repo-root `libs/shazamkit-android-release.aar`, and the Shazam developer token is supplied through a local `discrobble.shazam.developerToken` Gradle property.
+- The Android spike records PCM `16-bit` mono audio at `48kHz`, creates a Shazam signature, and calls `Session.match(signature)`.
+- The current normalized candidate shape follows the Android `MatchedMediaItem` docs and exposes:
+  - `title`
+  - `subtitle`
+  - `artist`
+  - `genres`
+  - `explicitContent`
+  - `isrc`
+  - `shazamID`
+  - `appleMusicID`
+  - `appleMusicURL`
+  - `webURL`
+  - `matchOffsetInMs`
+  - `predictedCurrentMatchOffset`
+  - `frequencySkew`
+  - `timeRanges`
+  - `frequencySkewRanges`
+- If the Apple AAR or developer token is missing locally, the Android shell surfaces an actionable unavailable state instead of failing the repo build.
 
 ### Fallback Behavior
 

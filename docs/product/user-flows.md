@@ -110,12 +110,13 @@
 1. User taps `Listen`.
 2. App starts a foreground recognition loop using native ShazamKit bindings.
 3. Recognition returns ranked song candidates with core fields such as title, artist, and timing offsets, and the app normalizes them against tracks on the selected Discogs release.
-4. If a strong match aligns with the expected track or a plausible next track:
+4. During the current native spike shells, the app also exposes those ranked candidates directly so platform-specific match shapes can be validated before the shared session engine is fully implemented.
+5. If a strong match aligns with the expected track or a plausible next track:
    - app updates the current track
    - app sends `updateNowPlaying` to Last.fm
    - app starts or updates the track timer
-5. Once Last.fm timing thresholds are satisfied, the app creates a `QueuedScrobble` and attempts immediate submission.
-6. If submission succeeds, app advances session state and waits for the next track.
+6. Once Last.fm timing thresholds are satisfied, the app creates a `QueuedScrobble` and attempts immediate submission.
+7. If submission succeeds, app advances session state and waits for the next track.
 
 ### Edge Cases
 
