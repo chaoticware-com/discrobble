@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
-import { md5 } from 'js-md5'
 import type { WorkerBindings } from './index'
+import { signLastfmParams } from './lastfmSigning'
 
 const CALLBACK_STATE_TTL_SECONDS = 15 * 60
 const HANDOFF_PAYLOAD_TTL_SECONDS = 60
@@ -423,18 +423,6 @@ async function signState(
   )
 
   return `${payloadSegment}.${encodeBase64Url(new Uint8Array(signature))}`
-}
-
-function signLastfmParams(
-  params: Record<string, string>,
-  apiSecret: string,
-): string {
-  const signatureBase = Object.entries(params)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}${value}`)
-    .join('')
-
-  return md5(`${signatureBase}${apiSecret}`)
 }
 
 function validateCallbackUrl(rawCallbackUrl: string): URL {

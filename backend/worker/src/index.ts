@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { handleLastfmAuthCallback, handleLastfmAuthStart } from './lastfmAuth'
+import { handleLastfmNowPlaying, handleLastfmScrobble } from './lastfmWrites'
 
 export interface WorkerBindings {
   AUTH_PAYLOAD_TTL_SECONDS?: string
@@ -26,5 +27,7 @@ app.get('/health', (c) =>
 
 app.post('/auth/lastfm/start', handleLastfmAuthStart)
 app.get('/auth/lastfm/callback', handleLastfmAuthCallback)
+app.post('/lastfm/now-playing', handleLastfmNowPlaying)
+app.post('/lastfm/scrobble', handleLastfmScrobble)
 
 export default app
