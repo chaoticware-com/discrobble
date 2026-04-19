@@ -135,10 +135,9 @@ jobs:
         run: |
           if [ ! -f backend/worker/wrangler.toml ]; then
             echo "Production Worker deployment is intentionally gated until backend/worker is scaffolded."
-            echo "This workflow already reserves the production environment and tag-based release path."
             exit 0
           fi
 
       - name: Placeholder production deployment
         run: |
-          echo "Replace this step with a Wrangler production deploy once backend/worker exists."
+          echo "Replace this step with a Wrangler production deploy once deploy credentials and worker routes are wired."

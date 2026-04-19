@@ -54,9 +54,9 @@ The required status checks later expand to:
 
 Runs only through GitHub Actions for non-production preview environments.
 
-Phase 0 adds this workflow as an environment-bound skeleton. The actual Wrangler deploy step stays gated until `backend/worker/` exists.
+Phase 0 adds this workflow as an environment-bound skeleton. The actual Wrangler deploy step stays a placeholder until deploy credentials and Worker behavior are wired into the repo.
 
-Once `backend/worker/` exists, the workflow will:
+Once deploy credentials and Worker behavior are wired, the workflow will:
 
 - intended for maintainer-controlled preview deployments
 - uses the `preview` GitHub environment
@@ -67,9 +67,9 @@ Once `backend/worker/` exists, the workflow will:
 
 Runs on version tags matching `v*`.
 
-Phase 0 adds the tag trigger, release metadata artifact, release metadata attestation, and `production` environment gate. The actual Worker deploy step stays gated until `backend/worker/` exists.
+Phase 0 adds the tag trigger, release metadata artifact, release metadata attestation, and `production` environment gate. The actual Worker deploy step stays a placeholder until deploy credentials and Worker behavior are wired into the repo.
 
-Once `backend/worker/` exists, the workflow expands to:
+Once deploy credentials and Worker behavior are wired, the workflow expands to:
 
 - rebuilds and retests release outputs
 - uploads release artifacts
@@ -124,7 +124,7 @@ For every production release, the public repository should expose:
 
 GitHub artifact attestations are required for deployable artifacts where supported by the workflow and artifact type.
 
-During Phase 0, the release workflow attests the release metadata artifact so the verification chain exists before the Worker binary or bundle is available. Once `backend/worker/` exists, that attestation coverage extends to the deployable Worker artifact as part of the tagged release flow.
+During Phase 0, the release workflow attests the release metadata artifact so the verification chain exists before the Worker binary or bundle is available. Once the Worker deploy step is live, that attestation coverage extends to the deployable Worker artifact as part of the tagged release flow.
 
 ## How A User Verifies Production
 
@@ -138,7 +138,7 @@ During Phase 0, the release workflow attests the release metadata artifact so th
 
 ### Full Worker Verification Chain
 
-Once `backend/worker/` exists and the production deploy step is live, extend the verification path by:
+Once the production deploy step is live, extend the verification path by:
 
 1. Inspecting the GitHub deployment record for the `production` environment.
 2. Inspecting the deployable Worker artifact and its associated build provenance attestation.

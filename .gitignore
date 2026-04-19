@@ -21,6 +21,7 @@ out/
 # Node / pnpm
 node_modules/
 .pnpm-store/
+.wrangler/
 
 # Local databases and caches
 *.db

@@ -13,12 +13,12 @@ This document owns the current actionable work order for Discrobble. Phase seque
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
 - Phase 0 repo controls are now in place under `chaoticware-com`, including baseline repository security settings, protected `main`, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, configured GitHub environments, and release provenance scaffolding.
-- No application code, CI workflows, or deployment configuration has been implemented yet.
-- The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
+- The first Worker scaffold now exists under `backend/worker/`, while mobile apps and shared modules are still unimplemented.
+- The immediate focus is Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Start the backend and auth spike scaffolding.
+1. Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp`.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -47,7 +47,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
 
 ## Phase 1 Backlog: Integration Spikes
 
-- [ ] B1.1 Scaffold `backend/worker` with `TypeScript`, `Hono`, `Wrangler`, and a minimal health route.
+- [x] B1.1 Scaffold `backend/worker` with `TypeScript`, `Hono`, `Wrangler`, and a minimal health route.
   Owner docs: [Stack](../technical/stack.md), [Repo Layout](../technical/repo-layout.md), [ADR-006](../decisions/ADR-006-cloudflare-workers-hono-backend.md)
 - [ ] B1.2 Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp` without building product features yet.
   Owner docs: [Architecture](../technical/architecture.md), [Repo Layout](../technical/repo-layout.md), [ADR-002](../decisions/ADR-002-kmp-native-ui.md)
