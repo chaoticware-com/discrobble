@@ -188,7 +188,6 @@ Example:
 - `page`: integer, required
 - `per_page`: integer, default `50`, max `100`
 - `folder_id`: integer, default `0`
-- `query`: optional search text applied server-side when supported
 
 ### Request Headers
 
@@ -266,10 +265,13 @@ At least one of `query` or `barcode` is required.
 }
 ```
 
+`match_reason` is `barcode` when the request was barcode-driven and `query` when the request used free-text search input.
+
 ### Error Cases
 
 - `400 missing_search_input`
 - `401 missing_discogs_credentials`
+- `401 discogs_auth_invalid`
 - `429 discogs_rate_limited`
 - `502 discogs_unavailable`
 

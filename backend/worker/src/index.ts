@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { handleDiscogsAuthCallback, handleDiscogsAuthStart } from './discogsAuth'
+import { handleDiscogsCollection, handleDiscogsMe, handleDiscogsSearch } from './discogsProxy'
 import { handleLastfmAuthCallback, handleLastfmAuthStart } from './lastfmAuth'
 import { handleLastfmNowPlaying, handleLastfmScrobble } from './lastfmWrites'
 
@@ -32,6 +33,9 @@ app.post('/auth/lastfm/start', handleLastfmAuthStart)
 app.get('/auth/lastfm/callback', handleLastfmAuthCallback)
 app.get('/auth/discogs/start', handleDiscogsAuthStart)
 app.get('/auth/discogs/callback', handleDiscogsAuthCallback)
+app.get('/discogs/me', handleDiscogsMe)
+app.get('/discogs/collection', handleDiscogsCollection)
+app.get('/discogs/search', handleDiscogsSearch)
 app.post('/lastfm/now-playing', handleLastfmNowPlaying)
 app.post('/lastfm/scrobble', handleLastfmScrobble)
 

@@ -18,11 +18,12 @@ This document owns the current actionable work order for Discrobble. Phase seque
 - The Worker and both native shells now complete the Last.fm auth spike end to end, including signed auth start requests, browser handoff, encrypted callback payloads, and secure local session storage.
 - The Worker now also implements the Last.fm `updateNowPlaying` and `track.scrobble` spike endpoints with request signing, normalized error mapping, and local timing-threshold enforcement for scrobbles when timing data is present.
 - The Worker and both native shells now also complete the Discogs auth spike end to end, including the browser-opened start route, encrypted request-token cookie handoff, encrypted callback payloads, and secure local token-pair storage.
+- The Worker now also proxies `/discogs/me`, `/discogs/collection`, and `/discogs/search` with OAuth-signed requests, normalized release payloads, and public-response validation against a real collection page and barcode search result.
 - The immediate focus is Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Implement Discogs collection fetch and barcode search spikes against real library data.
+1. Implement the iPhone ShazamKit spike and confirm candidate result shape.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -65,7 +66,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
 - [x] B1.7 Implement the Discogs auth spike on both platforms.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
-- [ ] B1.8 Implement Discogs collection fetch and barcode search spikes against real library data.
+- [x] B1.8 Implement Discogs collection fetch and barcode search spikes against real library data.
   Owner docs: [Integrations](../technical/integrations.md), [Testing Strategy](../technical/testing-strategy.md)
 - [ ] B1.9 Implement the iPhone ShazamKit spike and confirm candidate result shape.
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)

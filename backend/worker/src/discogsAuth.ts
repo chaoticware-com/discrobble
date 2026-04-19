@@ -17,11 +17,11 @@ import {
   validateCallbackUrl,
   verifyState,
 } from './authFlow'
+import { buildDiscogsAuthorizationHeader, DISCOGS_USER_AGENT } from './discogsOAuth'
 
 const DISCOGS_ACCESS_TOKEN_URL = 'https://api.discogs.com/oauth/access_token'
 const DISCOGS_AUTHORIZE_URL = 'https://www.discogs.com/oauth/authorize'
 const DISCOGS_REQUEST_TOKEN_URL = 'https://api.discogs.com/oauth/request_token'
-const DISCOGS_USER_AGENT = 'Discrobble/0.1 +https://github.com/chaoticware-com/discrobble'
 const AUTH_CONTEXT_COOKIE_NAME = 'discrobble_discogs_auth'
 
 type DiscogsSignedAuthState = SignedAuthState<'discogs'>
@@ -334,12 +334,13 @@ async function exchangeDiscogsAccessToken(input: {
   oauthTokenSecret: string
   oauthVerifier: string
 }): Promise<Required<Pick<DiscogsOAuthTokenResponse, 'oauth_token' | 'oauth_token_secret' | 'username'>>> {
-  const authorization = await buildOauthAuthorizationHeader({
+  const authorization = await buildDiscogsAuthorizationHeader({
     consumerKey: input.consumerKey,
     consumerSecret: input.consumerSecret,
     extraOauthParams: {
       oauth_verifier: input.oauthVerifier,
     },
+    method: 'POST',
     token: input.oauthToken,
     tokenSecret: input.oauthTokenSecret,
     url: DISCOGS_ACCESS_TOKEN_URL,
@@ -425,11 +426,6 @@ function parseDiscogsTokenResponse(responseText: string): DiscogsOAuthTokenRespo
   }
 }
 
-function percentEncode(value: string): string {
-  return encodeURIComponent(value).replace(/[!'()*]/g, (character) =>
-    `%${character.charCodeAt(0).toString(16).toUpperCase()}`)
-}
-
 async function readAuthContextCookie(
   c: WorkerContext,
   secret: string,
@@ -453,12 +449,13 @@ async function requestDiscogsRequestToken(input: {
   consumerKey: string
   consumerSecret: string
 }): Promise<Required<Pick<DiscogsOAuthTokenResponse, 'oauth_token' | 'oauth_token_secret'>>> {
-  const authorization = await buildOauthAuthorizationHeader({
+  const authorization = await buildDiscogsAuthorizationHeader({
     consumerKey: input.consumerKey,
     consumerSecret: input.consumerSecret,
     extraOauthParams: {
       oauth_callback: input.callbackUrl,
     },
+    method: 'POST',
     url: DISCOGS_REQUEST_TOKEN_URL,
   })
   const response = await fetch(DISCOGS_REQUEST_TOKEN_URL, {
@@ -529,94 +526,6 @@ function serializeCookie(
 
 function shouldUseSecureCookies(c: WorkerContext): boolean {
   return new URL(c.req.url).protocol === 'https:'
-}
-
-async function buildOauthAuthorizationHeader(input: {
-  consumerKey: string
-  consumerSecret: string
-  extraOauthParams?: Record<string, string>
-  token?: string
-  tokenSecret?: string
-  url: string
-}): Promise<string> {
-  const oauthParams: Record<string, string> = {
-    oauth_consumer_key: input.consumerKey,
-    oauth_nonce: randomNonce(),
-    oauth_signature_method: 'HMAC-SHA1',
-    oauth_timestamp: `${Math.floor(Date.now() / 1000)}`,
-    oauth_version: '1.0',
-    ...(input.token ? { oauth_token: input.token } : {}),
-    ...(input.extraOauthParams ?? {}),
-  }
-  const oauthSignature = await signOauthRequest({
-    consumerSecret: input.consumerSecret,
-    method: 'POST',
-    parameters: oauthParams,
-    tokenSecret: input.tokenSecret,
-    url: input.url,
-  })
-  const headerParams = {
-    ...oauthParams,
-    oauth_signature: oauthSignature,
-  }
-
-  return `OAuth ${Object.entries(headerParams)
-    .sort(([leftKey, leftValue], [rightKey, rightValue]) => {
-      const keyComparison = leftKey.localeCompare(rightKey)
-      return keyComparison !== 0 ? keyComparison : leftValue.localeCompare(rightValue)
-    })
-    .map(([key, value]) => `${percentEncode(key)}="${percentEncode(value)}"`)
-    .join(', ')}`
-}
-
-function normalizeUrl(inputUrl: string): string {
-  const url = new URL(inputUrl)
-  url.hash = ''
-  url.search = ''
-  return url.toString()
-}
-
-function randomNonce(): string {
-  return encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)))
-}
-
-async function signOauthRequest(input: {
-  consumerSecret: string
-  method: 'POST'
-  parameters: Record<string, string>
-  tokenSecret?: string
-  url: string
-}): Promise<string> {
-  const normalizedParameters = Object.entries(input.parameters)
-    .sort(([leftKey, leftValue], [rightKey, rightValue]) => {
-      const keyComparison = leftKey.localeCompare(rightKey)
-      return keyComparison !== 0 ? keyComparison : leftValue.localeCompare(rightValue)
-    })
-    .map(([key, value]) => `${percentEncode(key)}=${percentEncode(value)}`)
-    .join('&')
-  const baseString = [
-    input.method,
-    percentEncode(normalizeUrl(input.url)),
-    percentEncode(normalizedParameters),
-  ].join('&')
-  const signingKey = `${percentEncode(input.consumerSecret)}&${percentEncode(input.tokenSecret ?? '')}`
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(signingKey),
-    {
-      name: 'HMAC',
-      hash: 'SHA-1',
-    },
-    false,
-    ['sign'],
-  )
-  const signature = await crypto.subtle.sign(
-    'HMAC',
-    cryptoKey,
-    new TextEncoder().encode(baseString),
-  )
-
-  return btoa(String.fromCharCode(...new Uint8Array(signature)))
 }
 
 function discogsFailureMessage(
