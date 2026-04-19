@@ -15,12 +15,12 @@ This document owns the current actionable work order for Discrobble. Phase seque
 - Phase 0 repo controls are now in place under `chaoticware-com`, including baseline repository security settings, protected `main`, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, configured GitHub environments, and release provenance scaffolding.
 - The first Worker scaffold now exists under `backend/worker/`.
 - The Gradle root, checked-in wrapper, shared KMP module tree, and native auth shells now exist.
-- The iPhone and Android shells now handle auth callback URL handoff and expose Keychain- or keystore-backed token storage integration points for the upcoming provider spikes.
+- The Worker and both native shells now complete the Last.fm auth spike end to end, including signed auth start requests, browser handoff, encrypted callback payloads, and secure local session storage.
 - The immediate focus is Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Implement the Last.fm auth start and callback spike through the Worker and both native shells.
+1. Implement the Last.fm `updateNowPlaying` and `track.scrobble` spike through the Worker.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -57,7 +57,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md)
 - [x] B1.4 Add the minimal Android shell needed for deep-link auth callback handoff and secure token storage integration.
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md), [ADR-007](../decisions/ADR-007-jetpack-compose-android-ui.md)
-- [ ] B1.5 Implement the Last.fm auth start and callback spike through the Worker and both native shells.
+- [x] B1.5 Implement the Last.fm auth start and callback spike through the Worker and both native shells.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
 - [ ] B1.6 Implement the Last.fm `updateNowPlaying` and `track.scrobble` spike through the Worker.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)

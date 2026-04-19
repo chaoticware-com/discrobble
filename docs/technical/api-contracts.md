@@ -24,6 +24,8 @@
 
 This avoids durable backend storage while keeping provider secrets out of query parameters in plain text.
 
+If the backend has already validated the signed state and trusted the `callback_url`, callback failures should redirect back to the app with `#error_code=...&error_message=...` so the native shell can recover without leaving the user stranded in the browser.
+
 ## `POST /auth/lastfm/start`
 
 ### Request
@@ -61,7 +63,8 @@ This avoids durable backend storage while keeping provider secrets out of query 
 
 - validate state signature and expiry
 - exchange token for session using Last.fm API secret
-- redirect to app callback URL with encrypted fragment payload
+- redirect to app callback URL with encrypted fragment payload on success
+- redirect to app callback URL with `error_code` and `error_message` fragments when the state is valid but the provider exchange fails
 
 ### Redirect Payload Shape
 
@@ -75,11 +78,19 @@ This avoids durable backend storage while keeping provider secrets out of query 
 }
 ```
 
+`expires_at` above refers to the short-lived handoff payload expiry, not the Last.fm session key lifetime.
+
+### Redirect Error Fragment Shape
+
+```text
+discrobble://auth/lastfm#error_code=provider_exchange_failed&error_message=Discrobble%20could%20not%20exchange%20the%20Last.fm%20auth%20token%20for%20a%20session.
+```
+
 ### Error Cases
 
-- `400 invalid_state`
-- `401 provider_denied`
-- `502 provider_exchange_failed`
+- `400 invalid_state` when the Worker cannot trust the callback state enough to redirect safely
+- `401 provider_denied` redirected to the app as `error_code=provider_denied` once state is valid
+- `502 provider_exchange_failed` redirected to the app as `error_code=provider_exchange_failed` once state is valid
 
 ## `POST /auth/discogs/start`
 
@@ -358,4 +369,3 @@ Requests to this endpoint are not retried automatically by the client.
 - App handoff payload expires after one minute.
 - Expired payloads are discarded locally and require the user to restart auth.
 - Backend must redact provider tokens from logs and traces.
-

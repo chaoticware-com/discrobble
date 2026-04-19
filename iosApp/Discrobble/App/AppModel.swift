@@ -3,17 +3,21 @@ import Foundation
 
 @MainActor
 final class AppModel: ObservableObject {
+    @Published private(set) var authInFlightProviders: Set<AuthProvider> = []
     @Published private(set) var storedTokenSets: [AuthProvider: StoredIntegrationTokenSet] = [:]
     @Published private(set) var pendingCallbacks: [AuthProvider: PendingAuthCallback] = [:]
     @Published private(set) var lastErrorMessage: String?
 
+    private let authCoordinator: LastfmAuthCoordinator
     private let callbackParser: AuthCallbackParser
     private let tokenStore: TokenStoring
 
     init(
+        authCoordinator: LastfmAuthCoordinator = LastfmAuthCoordinator(),
         callbackParser: AuthCallbackParser = AuthCallbackParser(),
         tokenStore: TokenStoring = KeychainTokenStore()
     ) {
+        self.authCoordinator = authCoordinator
         self.callbackParser = callbackParser
         self.tokenStore = tokenStore
         reloadStoredState()
@@ -21,11 +25,41 @@ final class AppModel: ObservableObject {
 
     func handleIncomingURL(_ url: URL) {
         do {
-            let callback = try callbackParser.parse(url: url)
-            pendingCallbacks[callback.provider] = callback
-            lastErrorMessage = nil
+            let result = try callbackParser.parse(url: url)
+
+            switch result {
+            case let .payload(callback):
+                pendingCallbacks[callback.provider] = callback
+                let tokenSet = try authCoordinator.consumeCallback(callback)
+                applyTokenSet(tokenSet)
+                authInFlightProviders.remove(callback.provider)
+            case let .failure(failure):
+                try? authCoordinator.clearAttempt(for: failure.provider)
+                pendingCallbacks[failure.provider] = nil
+                authInFlightProviders.remove(failure.provider)
+                lastErrorMessage = failure.message
+            }
         } catch {
             lastErrorMessage = error.localizedDescription
+        }
+    }
+
+    func startAuth(for provider: AuthProvider) async -> URL? {
+        guard provider == .lastfm else {
+            lastErrorMessage = "Discogs auth is the next integration spike."
+            return nil
+        }
+
+        authInFlightProviders.insert(provider)
+
+        do {
+            let authorizeURL = try await authCoordinator.startAuth()
+            lastErrorMessage = nil
+            return authorizeURL
+        } catch {
+            authInFlightProviders.remove(provider)
+            lastErrorMessage = error.localizedDescription
+            return nil
         }
     }
 
@@ -67,6 +101,8 @@ final class AppModel: ObservableObject {
 
     func clearPendingCallback(for provider: AuthProvider) {
         pendingCallbacks[provider] = nil
+        authInFlightProviders.remove(provider)
+        try? authCoordinator.clearAttempt(for: provider)
         lastErrorMessage = nil
     }
 }

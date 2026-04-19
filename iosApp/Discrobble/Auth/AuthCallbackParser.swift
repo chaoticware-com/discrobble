@@ -1,18 +1,35 @@
 import Foundation
 
 struct AuthCallbackParser {
-    func parse(url: URL) throws -> PendingAuthCallback {
+    func parse(url: URL) throws -> AuthCallbackResult {
         guard url.scheme?.lowercased() == "discrobble" else {
             throw AuthCallbackParserError.unsupportedScheme
         }
 
         let provider = try parseProvider(from: url)
-        let payload = try parsePayload(from: url)
+        let fragment = parseFragment(from: url)
 
-        return PendingAuthCallback(
-            provider: provider,
-            encryptedPayload: payload,
-            receivedAt: Date()
+        if let errorCode = fragment["error_code"], !errorCode.isEmpty {
+            let errorMessage = fragment["error_message"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return .failure(
+                AuthCallbackFailure(
+                    provider: provider,
+                    code: errorCode,
+                    message: errorMessage ?? "The provider auth flow did not complete successfully."
+                )
+            )
+        }
+
+        guard let payload = fragment["payload"]?.trimmingCharacters(in: .whitespacesAndNewlines), !payload.isEmpty else {
+            throw AuthCallbackParserError.missingPayload
+        }
+
+        return .payload(
+            PendingAuthCallback(
+                provider: provider,
+                encryptedPayload: payload,
+                receivedAt: Date()
+            )
         )
     }
 
@@ -30,9 +47,9 @@ struct AuthCallbackParser {
         return provider
     }
 
-    private func parsePayload(from url: URL) throws -> String {
+    private func parseFragment(from url: URL) -> [String: String] {
         guard let fragment = url.fragment, !fragment.isEmpty else {
-            throw AuthCallbackParserError.missingPayload
+            return [:]
         }
 
         var fragmentComponents = URLComponents()
@@ -40,17 +57,17 @@ struct AuthCallbackParser {
         fragmentComponents.host = "fragment"
         fragmentComponents.query = fragment
 
-        let payload = fragmentComponents
+        return Dictionary(
+            uniqueKeysWithValues: fragmentComponents
             .queryItems?
-            .first(where: { $0.name == "payload" })?
-            .value?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .compactMap { item in
+                guard let value = item.value else {
+                    return nil
+                }
 
-        guard let payload, !payload.isEmpty else {
-            throw AuthCallbackParserError.missingPayload
-        }
-
-        return payload
+                return (item.name, value)
+            } ?? []
+        )
     }
 }
 

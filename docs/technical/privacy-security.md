@@ -22,7 +22,8 @@ Discrobble's product promise is that it does not build a personal cloud history 
 - Store provider tokens only in platform secure storage.
 - Never commit provider keys or secrets to the client bundle.
 - Encrypt auth handoff payloads to the device public key created for that auth attempt.
-- Use HTTPS for every app-to-backend and backend-to-provider call.
+- Use HTTPS for every app-to-backend and backend-to-provider call outside local developer loopback flows.
+- Allow loopback HTTP only for local simulator or emulator spikes that target a developer-run Worker instance.
 - Redact provider tokens, barcode values, and raw payload bodies from backend logs.
 - Disable analytics SDKs in MVP unless they are proven necessary and privacy-compatible.
 
@@ -78,4 +79,3 @@ Discrobble's product promise is that it does not build a personal cloud history 
 - Device history remains until the user deletes the app or explicitly clears local data.
 - Active sessions and queued scrobbles survive app restarts.
 - Backend callback context expires within minutes and is not recoverable after expiry.
-

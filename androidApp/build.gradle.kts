@@ -17,11 +17,17 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "DISCROBBLE_WORKER_BASE_URL", "\"http://10.0.2.2:8787\"")
+        }
+
         release {
+            buildConfigField("String", "DISCROBBLE_WORKER_BASE_URL", "\"https://worker.discrobble.invalid\"")
             isMinifyEnabled = false
         }
     }
@@ -49,5 +55,6 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

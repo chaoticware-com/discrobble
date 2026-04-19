@@ -1,5 +1,7 @@
 package com.chaoticware.discrobble.android
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,11 +27,15 @@ import com.chaoticware.discrobble.android.auth.PendingAuthCallback
 import com.chaoticware.discrobble.android.security.StoredIntegrationTokenSet
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.launch
 
 @Composable
 fun DiscrobbleAndroidShell(
     stateHolder: AuthShellStateHolder,
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -47,7 +55,7 @@ fun DiscrobbleAndroidShell(
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = "This shell accepts discrobble://auth/... callbacks and wires in Android keystore-backed token storage for the upcoming auth spike.",
+                        text = "This shell now starts the Last.fm browser auth spike, decrypts the callback handoff, and persists the resulting session in keystore-backed storage.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -55,9 +63,18 @@ fun DiscrobbleAndroidShell(
                 AuthProvider.entries.forEach { provider ->
                     ProviderStatusCard(
                         provider = provider,
+                        isAuthInFlight = stateHolder.authInFlightProviders.contains(provider),
                         tokenSet = stateHolder.storedTokenSets[provider],
                         pendingCallback = stateHolder.pendingCallbacks[provider],
                         onReload = stateHolder::reloadStoredState,
+                        onStartAuth = {
+                            coroutineScope.launch {
+                                val authorizeUrl = stateHolder.startAuth(provider) ?: return@launch
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, Uri.parse(authorizeUrl)),
+                                )
+                            }
+                        },
                         onClearStoredToken = { stateHolder.clearStoredToken(provider) },
                         onClearPendingCallback = { stateHolder.clearPendingCallback(provider) },
                     )
@@ -72,7 +89,7 @@ fun DiscrobbleAndroidShell(
                 }
 
                 Text(
-                    text = "Callback shape: discrobble://auth/lastfm#payload=... or discrobble://auth/discogs#payload=...",
+                    text = "Callback shape: discrobble://auth/lastfm#payload=... on success or #error_code=... on failure.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -83,9 +100,11 @@ fun DiscrobbleAndroidShell(
 @Composable
 private fun ProviderStatusCard(
     provider: AuthProvider,
+    isAuthInFlight: Boolean,
     tokenSet: StoredIntegrationTokenSet?,
     pendingCallback: PendingAuthCallback?,
     onReload: () -> Unit,
+    onStartAuth: () -> Unit,
     onClearStoredToken: () -> Unit,
     onClearPendingCallback: () -> Unit,
 ) {
@@ -103,6 +122,8 @@ private fun ProviderStatusCard(
 
             Text(
                 text = statusLine(
+                    isAuthInFlight = isAuthInFlight,
+                    provider = provider,
                     tokenSet = tokenSet,
                     pendingCallback = pendingCallback,
                 ),
@@ -139,8 +160,26 @@ private fun ProviderStatusCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Button(onClick = onReload) {
-                    Text("Reload Store")
+                if (provider == AuthProvider.LASTFM) {
+                    Button(
+                        enabled = !isAuthInFlight,
+                        onClick = onStartAuth,
+                    ) {
+                        Text(
+                            text = if (tokenSet == null) {
+                                "Connect Last.fm"
+                            } else {
+                                "Reconnect Last.fm"
+                            },
+                        )
+                    }
+                } else {
+                    Button(
+                        enabled = false,
+                        onClick = {},
+                    ) {
+                        Text("Discogs Next")
+                    }
                 }
 
                 if (tokenSet != null) {
@@ -157,19 +196,27 @@ private fun ProviderStatusCard(
                         )
                     }
                 }
+
+                Button(onClick = onReload) {
+                    Text("Reload Store")
+                }
             }
         }
     }
 }
 
 private fun statusLine(
+    isAuthInFlight: Boolean,
+    provider: AuthProvider,
     tokenSet: StoredIntegrationTokenSet?,
     pendingCallback: PendingAuthCallback?,
 ): String {
     return when {
         tokenSet != null -> "Connected in secure storage as ${tokenSet.username}."
-        pendingCallback != null -> "Auth callback received and waiting for payload decryption."
-        else -> "Waiting for auth callback."
+        isAuthInFlight -> "Waiting for the Last.fm browser approval callback."
+        pendingCallback != null -> "Encrypted callback received and waiting for secure handoff processing."
+        provider == AuthProvider.LASTFM -> "Ready to start the Last.fm browser auth flow."
+        else -> "Discogs auth spike is queued next."
     }
 }
 

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var appModel: AppModel
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -14,7 +15,7 @@ struct ContentView: View {
                     Text("iPhone auth shell")
                         .font(.headline)
 
-                    Text("This shell accepts `discrobble://auth/...` callbacks and wires in Keychain-backed token storage for the upcoming auth spike.")
+                    Text("This shell now starts the Last.fm browser auth spike, decrypts the callback handoff, and persists the resulting session in Keychain-backed storage.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -28,7 +29,7 @@ struct ContentView: View {
                         .foregroundStyle(.red)
                 }
 
-                Text("Callback shape: `discrobble://auth/lastfm#payload=...` or `discrobble://auth/discogs#payload=...`.")
+                Text("Callback shape: `discrobble://auth/lastfm#payload=...` on success or `#error_code=...` on failure.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -40,6 +41,7 @@ struct ContentView: View {
 
 private struct ProviderStatusCard: View {
     @EnvironmentObject private var appModel: AppModel
+    @Environment(\.openURL) private var openURL
 
     let provider: AuthProvider
 
@@ -49,6 +51,10 @@ private struct ProviderStatusCard: View {
 
     private var pendingCallback: PendingAuthCallback? {
         appModel.pendingCallbacks[provider]
+    }
+
+    private var isAuthInFlight: Bool {
+        appModel.authInFlightProviders.contains(provider)
     }
 
     var body: some View {
@@ -79,8 +85,18 @@ private struct ProviderStatusCard: View {
             }
 
             HStack(spacing: 12) {
-                Button("Reload Keychain") {
-                    appModel.reloadStoredState()
+                if provider == .lastfm {
+                    Button(tokenSet == nil ? "Connect Last.fm" : "Reconnect Last.fm") {
+                        Task {
+                            if let authorizeURL = await appModel.startAuth(for: provider) {
+                                openURL(authorizeURL)
+                            }
+                        }
+                    }
+                    .disabled(isAuthInFlight)
+                } else {
+                    Button("Discogs Next") {}
+                        .disabled(true)
                 }
 
                 if tokenSet != nil {
@@ -93,6 +109,10 @@ private struct ProviderStatusCard: View {
                     Button("Clear Pending Callback") {
                         appModel.clearPendingCallback(for: provider)
                     }
+                }
+
+                Button("Reload Keychain") {
+                    appModel.reloadStoredState()
                 }
             }
             .buttonStyle(.bordered)
@@ -107,11 +127,19 @@ private struct ProviderStatusCard: View {
             return "Connected in secure storage as \(tokenSet.username)."
         }
 
-        if pendingCallback != nil {
-            return "Auth callback received and waiting for payload decryption."
+        if isAuthInFlight {
+            return "Waiting for the Last.fm browser approval callback."
         }
 
-        return "Waiting for auth callback."
+        if pendingCallback != nil {
+            return "Encrypted callback received and waiting for secure handoff processing."
+        }
+
+        if provider == .lastfm {
+            return "Ready to start the Last.fm browser auth flow."
+        }
+
+        return "Discogs auth spike is queued next."
     }
 }
 

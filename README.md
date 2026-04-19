@@ -25,7 +25,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 - Repository status: Phase 0 repo controls are implemented under `chaoticware-com`, including protected `main`, initial GitHub Actions/release workflows, GitHub environments, and release provenance scaffolding.
 - Product definition: MVP scope, user flows, architecture, API contracts, stack, repo layout, CI/CD, and ADRs are documented.
 - Delivery planning status: a tactical implementation backlog now exists alongside the roadmap.
-- Implementation status: the Worker runtime scaffold, Gradle/KMP root, shared module tree, and native auth shells now exist. The iPhone and Android shells can accept `discrobble://auth/...` callbacks and wire them into Keychain- or keystore-backed token storage, while the provider auth flow itself is still unimplemented.
+- Implementation status: the Worker runtime scaffold, Gradle/KMP root, shared module tree, and native auth shells now exist. The Worker and both native shells now implement the Last.fm auth spike end to end: the apps generate a short-lived device key, request a signed Worker auth start URL, open the browser flow, decrypt the callback handoff locally, and persist the resulting Last.fm session in Keychain- or keystore-backed storage. Discogs auth and Last.fm write calls are still pending.
 - This README is intentionally brief; detailed behavior and policy live in the docs it links to.
 
 ## Documentation Index

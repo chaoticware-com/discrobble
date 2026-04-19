@@ -15,6 +15,7 @@
 
 # Kotlin / Gradle
 .gradle/
+.kotlin/
 build/
 out/
 local.properties
