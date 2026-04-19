@@ -12,20 +12,20 @@ This document owns the current actionable work order for Discrobble. Phase seque
 ## Current Status
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
+- The public GitHub repository now exists under `chaoticware-com`, and baseline repository security settings are enabled.
 - No application code, CI workflows, or deployment configuration has been implemented yet.
 - The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Create the public GitHub repo and push the current baseline.
-2. Protect `main` and install the required review gates.
-3. Add the first `GitHub Actions` workflows for docs and workflow validation.
-4. Set up preview and production deployment environments.
-5. Start the backend and auth spike scaffolding.
+1. Protect `main` and install the required review gates.
+2. Add the first `GitHub Actions` workflows for docs and workflow validation.
+3. Set up preview and production deployment environments.
+4. Start the backend and auth spike scaffolding.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
-- [ ] B0.1 Create the public GitHub repository, push `main`, and enable baseline repository security settings.
+- [x] B0.1 Create the public GitHub repository, push `main`, and enable baseline repository security settings.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Security](../../SECURITY.md)
 - [ ] B0.2 Protect `main` with pull-request-only merges, required status checks, and no direct pushes.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Contributing](../../CONTRIBUTING.md)
