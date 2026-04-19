@@ -25,7 +25,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 - Repository status: Phase 0 repo controls are implemented under `chaoticware-com`, including protected `main`, initial GitHub Actions/release workflows, GitHub environments, and release provenance scaffolding.
 - Product definition: MVP scope, user flows, architecture, API contracts, stack, repo layout, CI/CD, and ADRs are documented.
 - Delivery planning status: a tactical implementation backlog now exists alongside the roadmap.
-- Implementation status: the Worker runtime scaffold, Gradle/KMP root, shared module tree, Android Compose shell, and iPhone auth shell now exist. The iPhone shell can accept `discrobble://auth/...` callbacks and wire them into Keychain-backed token storage, while the Android callback/storage shell and provider auth flow are still unimplemented.
+- Implementation status: the Worker runtime scaffold, Gradle/KMP root, shared module tree, and native auth shells now exist. The iPhone and Android shells can accept `discrobble://auth/...` callbacks and wire them into Keychain- or keystore-backed token storage, while the provider auth flow itself is still unimplemented.
 - This README is intentionally brief; detailed behavior and policy live in the docs it links to.
 
 ## Documentation Index

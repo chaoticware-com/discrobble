@@ -14,13 +14,13 @@ This document owns the current actionable work order for Discrobble. Phase seque
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
 - Phase 0 repo controls are now in place under `chaoticware-com`, including baseline repository security settings, protected `main`, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, configured GitHub environments, and release provenance scaffolding.
 - The first Worker scaffold now exists under `backend/worker/`.
-- The Gradle root, checked-in wrapper, shared KMP module tree, Android Compose shell, and iPhone auth shell now exist.
-- The iPhone shell now handles auth callback URL handoff and exposes Keychain-backed token storage integration points for the upcoming provider spikes.
+- The Gradle root, checked-in wrapper, shared KMP module tree, and native auth shells now exist.
+- The iPhone and Android shells now handle auth callback URL handoff and expose Keychain- or keystore-backed token storage integration points for the upcoming provider spikes.
 - The immediate focus is Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Add the minimal Android shell needed for deep-link auth callback handoff and secure token storage integration.
+1. Implement the Last.fm auth start and callback spike through the Worker and both native shells.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -55,7 +55,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [Architecture](../technical/architecture.md), [Repo Layout](../technical/repo-layout.md), [ADR-002](../decisions/ADR-002-kmp-native-ui.md)
 - [x] B1.3 Add the minimal iPhone shell needed for deep-link auth callback handoff and secure token storage integration.
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md)
-- [ ] B1.4 Add the minimal Android shell needed for deep-link auth callback handoff and secure token storage integration.
+- [x] B1.4 Add the minimal Android shell needed for deep-link auth callback handoff and secure token storage integration.
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md), [ADR-007](../decisions/ADR-007-jetpack-compose-android-ui.md)
 - [ ] B1.5 Implement the Last.fm auth start and callback spike through the Worker and both native shells.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
