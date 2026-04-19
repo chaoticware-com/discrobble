@@ -12,13 +12,13 @@ This document owns the current actionable work order for Discrobble. Phase seque
 ## Current Status
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
-- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings, `main` branch protection, in-repo review controls, initial GitHub Actions checks, and preview/release workflow skeletons enabled.
+- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings, `main` branch protection, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, and configured GitHub environments.
 - No application code, CI workflows, or deployment configuration has been implemented yet.
 - The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
 
 ## Immediate Next Slice
 
-1. Set up preview and production deployment environments.
+1. Add provenance validation for tagged Worker releases and document the public verification path from tag to deploy.
 2. Start the backend and auth spike scaffolding.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
@@ -33,7 +33,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [Testing Strategy](../technical/testing-strategy.md), [CI/CD and Provenance](../technical/ci-cd-and-provenance.md)
 - [x] B0.5 Add `preview-worker.yml` and `release.yml` skeletons with GitHub environments and tag-triggered production release flow.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-010](../decisions/ADR-010-tagged-releases-and-attestations.md)
-- [ ] B0.6 Configure `preview` and `production` GitHub environments, secret boundaries, and required approvals.
+- [x] B0.6 Configure `preview` and `production` GitHub environments, secret boundaries, and required approvals.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Security](../../SECURITY.md)
 - [ ] B0.7 Add provenance validation for tagged Worker releases and document the public verification path from tag to deploy.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-010](../decisions/ADR-010-tagged-releases-and-attestations.md)

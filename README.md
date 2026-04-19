@@ -22,7 +22,7 @@ Discrobble is a privacy-first open-source mobile app for vinyl listeners who wan
 
 ## Current Status
 
-- Repository status: public GitHub repo created under `chaoticware-com`, with `main` protected and initial GitHub Actions/release workflow skeletons added; docs-first bootstrap is still in progress.
+- Repository status: public GitHub repo created under `chaoticware-com`, with `main` protected, initial GitHub Actions/release workflow skeletons added, and GitHub environments configured; docs-first bootstrap is still in progress.
 - Product definition: MVP scope, user flows, architecture, API contracts, stack, repo layout, CI/CD, and ADRs are documented.
 - Delivery planning status: a tactical implementation backlog now exists alongside the roadmap.
 - Implementation status: no code or app scaffolding has been created yet.
