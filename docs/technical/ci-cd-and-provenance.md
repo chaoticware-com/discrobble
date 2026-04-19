@@ -67,7 +67,7 @@ Once `backend/worker/` exists, the workflow will:
 
 Runs on version tags matching `v*`.
 
-Phase 0 adds the tag trigger, GitHub Release metadata artifact, and `production` environment gate. The actual Worker deploy step stays gated until `backend/worker/` exists.
+Phase 0 adds the tag trigger, release metadata artifact, release metadata attestation, and `production` environment gate. The actual Worker deploy step stays gated until `backend/worker/` exists.
 
 Once `backend/worker/` exists, the workflow expands to:
 
@@ -124,14 +124,25 @@ For every production release, the public repository should expose:
 
 GitHub artifact attestations are required for deployable artifacts where supported by the workflow and artifact type.
 
+During Phase 0, the release workflow attests the release metadata artifact so the verification chain exists before the Worker binary or bundle is available. Once `backend/worker/` exists, that attestation coverage extends to the deployable Worker artifact as part of the tagged release flow.
+
 ## How A User Verifies Production
 
-1. Open the public GitHub Release for the production version tag.
+### Phase 0 Verification Chain
+
+1. Open the public GitHub Release for the version tag.
 2. Confirm the release points to the expected commit SHA.
 3. Open the linked GitHub Actions release workflow run.
-4. Inspect the GitHub deployment record for the `production` environment.
-5. Inspect the release artifacts and the associated build provenance attestation.
-6. Verify that the deployed Worker version and the public release metadata agree on tag, commit, and workflow run.
+4. Inspect the attached `release-metadata.json` artifact and its GitHub attestation.
+5. Confirm the metadata artifact agrees on tag, commit SHA, workflow name, and run identifier.
+
+### Full Worker Verification Chain
+
+Once `backend/worker/` exists and the production deploy step is live, extend the verification path by:
+
+1. Inspecting the GitHub deployment record for the `production` environment.
+2. Inspecting the deployable Worker artifact and its associated build provenance attestation.
+3. Verifying that the deployed Worker version and the public release metadata agree on tag, commit, and workflow run.
 
 ## Cloudflare Worker Deployment Rules
 
