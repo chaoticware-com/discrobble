@@ -12,7 +12,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
 ## Current Status
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
-- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings, `main` branch protection, in-repo review controls, and the first GitHub Actions checks enabled.
+- The public GitHub repository now exists under `chaoticware-com`, with baseline repository security settings, `main` branch protection, in-repo review controls, initial GitHub Actions checks, and preview/release workflow skeletons enabled.
 - No application code, CI workflows, or deployment configuration has been implemented yet.
 - The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
 
@@ -31,7 +31,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-009](../decisions/ADR-009-coderabbit-required-pr-gate.md)
 - [x] B0.4 Add `ci.yml` with `ci/docs` and `ci/workflows` as the first required checks.
   Owner docs: [Testing Strategy](../technical/testing-strategy.md), [CI/CD and Provenance](../technical/ci-cd-and-provenance.md)
-- [ ] B0.5 Add `preview-worker.yml` and `release.yml` skeletons with GitHub environments and tag-triggered production release flow.
+- [x] B0.5 Add `preview-worker.yml` and `release.yml` skeletons with GitHub environments and tag-triggered production release flow.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-010](../decisions/ADR-010-tagged-releases-and-attestations.md)
 - [ ] B0.6 Configure `preview` and `production` GitHub environments, secret boundaries, and required approvals.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Security](../../SECURITY.md)

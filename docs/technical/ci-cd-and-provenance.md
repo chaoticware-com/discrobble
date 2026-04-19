@@ -54,6 +54,10 @@ The required status checks later expand to:
 
 Runs only through GitHub Actions for non-production preview environments.
 
+Phase 0 adds this workflow as an environment-bound skeleton. The actual Wrangler deploy step stays gated until `backend/worker/` exists.
+
+Once `backend/worker/` exists, the workflow will:
+
 - intended for maintainer-controlled preview deployments
 - uses the `preview` GitHub environment
 - never uses production secrets
@@ -62,6 +66,10 @@ Runs only through GitHub Actions for non-production preview environments.
 ### `release.yml`
 
 Runs on version tags matching `v*`.
+
+Phase 0 adds the tag trigger, GitHub Release metadata artifact, and `production` environment gate. The actual Worker deploy step stays gated until `backend/worker/` exists.
+
+Once `backend/worker/` exists, the workflow expands to:
 
 - rebuilds and retests release outputs
 - uploads release artifacts
