@@ -23,6 +23,37 @@ This avoids durable backend storage while keeping provider secrets out of query 
 
 If the backend has already validated the signed state and trusted the `callback_url`, callback failures should redirect back to the app with `#error_code=...&error_message=...` so the native shell can recover without leaving the user stranded in the browser.
 
+### Encrypted Fragment Envelope Shape
+
+The `payload` fragment value is a UTF-8 JSON envelope that the native shell decrypts locally with the pending auth-attempt private key:
+
+```json
+{
+  "alg": "ECDH-P256+HKDF-SHA256+A256GCM",
+  "epk": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
+  "salt": "<base64url>",
+  "iv": "<base64url>",
+  "ciphertext": "<base64url>"
+}
+```
+
+The envelope algorithm and HKDF info string are fixed for the current spikes, and the decrypted payload then matches the provider-specific handoff shapes documented below.
+
+### Standard JSON Error Envelope
+
+Worker JSON failures currently normalize to:
+
+```json
+{
+  "error": {
+    "code": "invalid_payload",
+    "message": "User-safe explanation"
+  }
+}
+```
+
+All JSON responses from the current Worker routes also return `Cache-Control: no-store`.
+
 ## `POST /auth/lastfm/start`
 
 ### Request
@@ -47,7 +78,8 @@ If the backend has already validated the signed state and trusted the `callback_
 
 - `400 invalid_callback_url`
 - `400 invalid_device_public_key`
-- `500 auth_start_failed`
+- `400 invalid_platform`
+- `400 auth_start_failed`
 
 ## `GET /auth/lastfm/callback`
 
@@ -103,6 +135,8 @@ Example:
 /auth/discogs/start?callback_url=discrobble%3A%2F%2Fauth%2Fdiscogs&device_public_key=...&platform=android
 ```
 
+`platform` currently accepts only `ios` or `android`.
+
 ### Backend Notes
 
 - Endpoint must be opened in the browser, not fetched first as JSON, so the short-lived encrypted request-token cookie is set in the same browser context that returns on callback.
@@ -118,6 +152,7 @@ Example:
 
 - `400 invalid_callback_url`
 - `400 invalid_device_public_key`
+- `400 invalid_platform`
 - `502 request_token_failed`
 
 ## `GET /auth/discogs/callback`
@@ -224,6 +259,13 @@ Example:
 }
 ```
 
+Current normalization details from the spike:
+
+- `artist` is the joined `basic_information.artists[].name` string.
+- `formats` merges both the Discogs format `name` values and each `descriptions[]` value.
+- `tracklist` comes from a follow-up `/releases/{id}` fetch per item, and each track currently keeps only `position`, `title`, and nullable `duration`.
+- `cover_image`, `instance_id`, `year`, and `duration` are nullable when Discogs omits them.
+
 ### Error Cases
 
 - `401 missing_discogs_credentials`
@@ -267,6 +309,12 @@ At least one of `query` or `barcode` is required.
 
 `match_reason` is `barcode` when the request was barcode-driven and `query` when the request used free-text search input.
 
+Current normalization details from the spike:
+
+- Discogs `title` values shaped like `Artist - Release` are split locally into `artist` and `title`.
+- Only Discogs results with `type=release` and a numeric `id` survive normalization.
+- `barcode_values` is copied from the provider result array as-is, with no extra local parsing.
+
 ### Error Cases
 
 - `400 missing_search_input`
@@ -305,6 +353,8 @@ At least one of `query` or `barcode` is required.
 }
 ```
 
+`ignored` is currently derived from Last.fm's `<ignoredmessage code="...">` value and becomes `true` when that code is non-zero.
+
 ### Error Cases
 
 - `400 invalid_payload`
@@ -313,6 +363,12 @@ At least one of `query` or `barcode` is required.
 - `502 lastfm_unavailable`
 
 Requests to this endpoint are not retried automatically by the client.
+
+Current provider error mapping:
+
+- Last.fm codes `4` and `9` normalize to `lastfm_session_invalid`.
+- Last.fm codes `2`, `3`, `8`, `10`, and `11` normalize to `lastfm_unavailable`.
+- Other structured Last.fm errors normalize to `invalid_payload`.
 
 ## `POST /lastfm/scrobble`
 
@@ -365,6 +421,8 @@ Requests to this endpoint are not retried automatically by the client.
   - missing required metadata
   - malformed timestamp
   - filtered metadata that Last.fm accepts but ignores
+
+Current provider error mapping for successful HTTP responses matches `POST /lastfm/now-playing`.
 
 ## Auth State Rules
 

@@ -21,11 +21,12 @@ This document owns the current actionable work order for Discrobble. Phase seque
 - The Worker now also proxies `/discogs/me`, `/discogs/collection`, and `/discogs/search` with OAuth-signed requests, normalized release payloads, and public-response validation against a real collection page and barcode search result.
 - The iPhone shell now also exposes a one-shot ShazamKit spike using `SHManagedSession`, microphone permission handling through `AVAudioApplication`, and a ranked candidate view that confirms the current native match shape.
 - The Android shell now also exposes a one-shot ShazamKit spike wired for Apple's local AAR-based SDK, records PCM `16-bit` mono microphone audio, and normalizes the documented `MatchResult.Match.matchedMediaItems` candidate shape while surfacing an actionable unavailable state when the local SDK or developer token is missing.
-- The immediate focus is Phase 1 integration spikes.
+- API contracts, data model, and testing strategy now also reflect the actual spike payloads, normalized error envelopes, and current ShazamKit platform caveats.
+- Phase 1 spike findings are now documented, and the next implementation work is the Phase 2 MVP foundation.
 
 ## Immediate Next Slice
 
-1. Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
+1. Create the shared module implementations for auth, catalog, session, scrobble, persistence, network, and DI.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
@@ -74,7 +75,7 @@ This document owns the current actionable work order for Discrobble. Phase seque
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)
 - [x] B1.10 Implement the Android ShazamKit spike and confirm candidate result shape.
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)
-- [ ] B1.11 Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
+- [x] B1.11 Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
   Owner docs: [API Contracts](../technical/api-contracts.md), [Data Model](../technical/data-model.md), [Testing Strategy](../technical/testing-strategy.md)
 
 ### Phase 1 Gate
