@@ -15,7 +15,7 @@ struct ContentView: View {
                     Text("iPhone auth shell")
                         .font(.headline)
 
-                    Text("This shell now starts the Last.fm browser auth spike, decrypts the callback handoff, and persists the resulting session in Keychain-backed storage.")
+                    Text("This shell now starts the Last.fm and Discogs browser auth spikes, decrypts the callback handoff, and persists the resulting credentials in Keychain-backed storage.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -29,7 +29,7 @@ struct ContentView: View {
                         .foregroundStyle(.red)
                 }
 
-                Text("Callback shape: `discrobble://auth/lastfm#payload=...` on success or `#error_code=...` on failure.")
+                Text("Callback shape: `discrobble://auth/{provider}#payload=...` on success or `#error_code=...` on failure.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -85,22 +85,17 @@ private struct ProviderStatusCard: View {
             }
 
             HStack(spacing: 12) {
-                if provider == .lastfm {
-                    Button(tokenSet == nil ? "Connect Last.fm" : "Reconnect Last.fm") {
-                        Task {
-                            if let authorizeURL = await appModel.startAuth(for: provider) {
-                                openURL(authorizeURL)
-                            }
+                Button(tokenSet == nil ? "Connect \(provider.displayName)" : "Reconnect \(provider.displayName)") {
+                    Task {
+                        if let authorizeURL = await appModel.startAuth(for: provider) {
+                            openURL(authorizeURL)
                         }
                     }
-                    .disabled(isAuthInFlight)
-                } else {
-                    Button("Discogs Next") {}
-                        .disabled(true)
                 }
+                .disabled(isAuthInFlight)
 
                 if tokenSet != nil {
-                    Button("Clear Stored Session") {
+                    Button("Clear Stored Credentials") {
                         appModel.clearStoredToken(for: provider)
                     }
                 }
@@ -128,18 +123,14 @@ private struct ProviderStatusCard: View {
         }
 
         if isAuthInFlight {
-            return "Waiting for the Last.fm browser approval callback."
+            return "Waiting for the \(provider.displayName) browser approval callback."
         }
 
         if pendingCallback != nil {
             return "Encrypted callback received and waiting for secure handoff processing."
         }
 
-        if provider == .lastfm {
-            return "Ready to start the Last.fm browser auth flow."
-        }
-
-        return "Discogs auth spike is queued next."
+        return "Ready to start the \(provider.displayName) browser auth flow."
     }
 }
 

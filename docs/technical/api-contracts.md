@@ -12,11 +12,8 @@
 ### Shared Pattern
 
 1. App generates an ephemeral device key pair for the auth attempt.
-2. App calls a `/auth/.../start` endpoint with:
-   - `callback_url`: universal link or app link that returns to the app
-   - `device_public_key`: PEM or compact JWK string
-   - `platform`: `ios` or `android`
-3. Backend creates a signed state payload and redirects the user to the provider.
+2. App passes `callback_url`, `device_public_key`, and `platform` to a `/auth/.../start` endpoint.
+3. Backend creates a signed state payload and starts the provider auth flow.
 4. Provider redirects to backend callback.
 5. Backend exchanges provider credentials and redirects to `callback_url#payload=...`.
 6. `payload` is encrypted for the device public key and contains the provider token set plus a short expiry.
@@ -92,30 +89,30 @@ discrobble://auth/lastfm#error_code=provider_exchange_failed&error_message=Discr
 - `401 provider_denied` redirected to the app as `error_code=provider_denied` once state is valid
 - `502 provider_exchange_failed` redirected to the app as `error_code=provider_exchange_failed` once state is valid
 
-## `POST /auth/discogs/start`
+## `GET /auth/discogs/start`
 
-### Request
+### Query Parameters
 
-```json
-{
-  "callback_url": "discrobble://auth/discogs",
-  "device_public_key": "<public-key>",
-  "platform": "android"
-}
-```
+- `callback_url`
+- `device_public_key`
+- `platform`
 
-### Response
+Example:
 
-```json
-{
-  "authorize_url": "https://www.discogs.com/oauth/authorize?oauth_token=..."
-}
+```text
+/auth/discogs/start?callback_url=discrobble%3A%2F%2Fauth%2Fdiscogs&device_public_key=...&platform=android
 ```
 
 ### Backend Notes
 
+- Endpoint must be opened in the browser, not fetched first as JSON, so the short-lived encrypted request-token cookie is set in the same browser context that returns on callback.
 - Backend stores the temporary Discogs request-token secret in an encrypted, HTTP-only cookie with a fifteen-minute TTL.
 - No server-side database row is created for the auth flow.
+
+### Response
+
+- `302` redirect to `https://www.discogs.com/oauth/authorize?oauth_token=...`
+- `Set-Cookie` with the encrypted temporary request-token secret
 
 ### Error Cases
 
@@ -129,13 +126,16 @@ discrobble://auth/lastfm#error_code=provider_exchange_failed&error_message=Discr
 
 - `oauth_token`
 - `oauth_verifier`
+- signed state in query string
 - encrypted auth context cookie
 
 ### Backend Behavior
 
+- validate signed state and expiry
 - restore temporary request-token secret from cookie
 - exchange for Discogs access token and secret
-- redirect to app callback URL with encrypted fragment payload
+- redirect to app callback URL with encrypted fragment payload on success
+- redirect to app callback URL with `error_code` and `error_message` fragments when the state is valid but the browser auth context or access-token exchange fails
 
 ### Redirect Payload Shape
 
@@ -152,9 +152,10 @@ discrobble://auth/lastfm#error_code=provider_exchange_failed&error_message=Discr
 
 ### Error Cases
 
-- `400 invalid_auth_context`
-- `401 provider_denied`
-- `502 access_token_failed`
+- `400 invalid_state` when the Worker cannot trust the callback state enough to redirect safely
+- `400 invalid_auth_context` redirected to the app as `error_code=invalid_auth_context` once state is valid
+- `401 provider_denied` redirected to the app as `error_code=provider_denied` once state is valid
+- `502 access_token_failed` redirected to the app as `error_code=access_token_failed` once state is valid
 
 ## `GET /discogs/me`
 

@@ -55,7 +55,7 @@ fun DiscrobbleAndroidShell(
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = "This shell now starts the Last.fm browser auth spike, decrypts the callback handoff, and persists the resulting session in keystore-backed storage.",
+                        text = "This shell now starts the Last.fm and Discogs browser auth spikes, decrypts the callback handoff, and persists the resulting credentials in keystore-backed storage.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -89,7 +89,7 @@ fun DiscrobbleAndroidShell(
                 }
 
                 Text(
-                    text = "Callback shape: discrobble://auth/lastfm#payload=... on success or #error_code=... on failure.",
+                    text = "Callback shape: discrobble://auth/{provider}#payload=... on success or #error_code=... on failure.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -160,31 +160,22 @@ private fun ProviderStatusCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                if (provider == AuthProvider.LASTFM) {
-                    Button(
-                        enabled = !isAuthInFlight,
-                        onClick = onStartAuth,
-                    ) {
-                        Text(
-                            text = if (tokenSet == null) {
-                                "Connect Last.fm"
-                            } else {
-                                "Reconnect Last.fm"
-                            },
-                        )
-                    }
-                } else {
-                    Button(
-                        enabled = false,
-                        onClick = {},
-                    ) {
-                        Text("Discogs Next")
-                    }
+                Button(
+                    enabled = !isAuthInFlight,
+                    onClick = onStartAuth,
+                ) {
+                    Text(
+                        text = if (tokenSet == null) {
+                            "Connect ${provider.displayName}"
+                        } else {
+                            "Reconnect ${provider.displayName}"
+                        },
+                    )
                 }
 
                 if (tokenSet != null) {
                     Button(onClick = onClearStoredToken) {
-                        Text("Clear Session")
+                        Text("Clear Credentials")
                     }
                 }
 
@@ -213,10 +204,9 @@ private fun statusLine(
 ): String {
     return when {
         tokenSet != null -> "Connected in secure storage as ${tokenSet.username}."
-        isAuthInFlight -> "Waiting for the Last.fm browser approval callback."
+        isAuthInFlight -> "Waiting for the ${provider.displayName} browser approval callback."
         pendingCallback != null -> "Encrypted callback received and waiting for secure handoff processing."
-        provider == AuthProvider.LASTFM -> "Ready to start the Last.fm browser auth flow."
-        else -> "Discogs auth spike is queued next."
+        else -> "Ready to start the ${provider.displayName} browser auth flow."
     }
 }
 

@@ -8,17 +8,20 @@ final class AppModel: ObservableObject {
     @Published private(set) var pendingCallbacks: [AuthProvider: PendingAuthCallback] = [:]
     @Published private(set) var lastErrorMessage: String?
 
-    private let authCoordinator: LastfmAuthCoordinator
+    private let discogsAuthCoordinator: DiscogsAuthCoordinator
     private let callbackParser: AuthCallbackParser
+    private let lastfmAuthCoordinator: LastfmAuthCoordinator
     private let tokenStore: TokenStoring
 
     init(
-        authCoordinator: LastfmAuthCoordinator = LastfmAuthCoordinator(),
+        discogsAuthCoordinator: DiscogsAuthCoordinator = DiscogsAuthCoordinator(),
         callbackParser: AuthCallbackParser = AuthCallbackParser(),
+        lastfmAuthCoordinator: LastfmAuthCoordinator = LastfmAuthCoordinator(),
         tokenStore: TokenStoring = KeychainTokenStore()
     ) {
-        self.authCoordinator = authCoordinator
+        self.discogsAuthCoordinator = discogsAuthCoordinator
         self.callbackParser = callbackParser
+        self.lastfmAuthCoordinator = lastfmAuthCoordinator
         self.tokenStore = tokenStore
         reloadStoredState()
     }
@@ -30,11 +33,15 @@ final class AppModel: ObservableObject {
             switch result {
             case let .payload(callback):
                 pendingCallbacks[callback.provider] = callback
-                let tokenSet = try authCoordinator.consumeCallback(callback)
-                applyTokenSet(tokenSet)
-                authInFlightProviders.remove(callback.provider)
+                do {
+                    let tokenSet = try consumeCallback(callback)
+                    applyTokenSet(tokenSet)
+                } catch {
+                    authInFlightProviders.remove(callback.provider)
+                    lastErrorMessage = error.localizedDescription
+                }
             case let .failure(failure):
-                try? authCoordinator.clearAttempt(for: failure.provider)
+                try? clearAttempt(for: failure.provider)
                 pendingCallbacks[failure.provider] = nil
                 authInFlightProviders.remove(failure.provider)
                 lastErrorMessage = failure.message
@@ -45,15 +52,18 @@ final class AppModel: ObservableObject {
     }
 
     func startAuth(for provider: AuthProvider) async -> URL? {
-        guard provider == .lastfm else {
-            lastErrorMessage = "Discogs auth is the next integration spike."
-            return nil
-        }
-
         authInFlightProviders.insert(provider)
 
         do {
-            let authorizeURL = try await authCoordinator.startAuth()
+            let authorizeURL: URL
+
+            switch provider {
+            case .lastfm:
+                authorizeURL = try await lastfmAuthCoordinator.startAuth()
+            case .discogs:
+                authorizeURL = try discogsAuthCoordinator.startAuth()
+            }
+
             lastErrorMessage = nil
             return authorizeURL
         } catch {
@@ -81,6 +91,7 @@ final class AppModel: ObservableObject {
     func applyTokenSet(_ tokenSet: StoredIntegrationTokenSet) {
         do {
             try tokenStore.saveTokenSet(tokenSet)
+            authInFlightProviders.remove(tokenSet.provider)
             storedTokenSets[tokenSet.provider] = tokenSet
             pendingCallbacks[tokenSet.provider] = nil
             lastErrorMessage = nil
@@ -102,7 +113,25 @@ final class AppModel: ObservableObject {
     func clearPendingCallback(for provider: AuthProvider) {
         pendingCallbacks[provider] = nil
         authInFlightProviders.remove(provider)
-        try? authCoordinator.clearAttempt(for: provider)
+        try? clearAttempt(for: provider)
         lastErrorMessage = nil
+    }
+
+    private func clearAttempt(for provider: AuthProvider) throws {
+        switch provider {
+        case .lastfm:
+            try lastfmAuthCoordinator.clearAttempt(for: provider)
+        case .discogs:
+            try discogsAuthCoordinator.clearAttempt(for: provider)
+        }
+    }
+
+    private func consumeCallback(_ callback: PendingAuthCallback) throws -> StoredIntegrationTokenSet {
+        switch callback.provider {
+        case .lastfm:
+            return try lastfmAuthCoordinator.consumeCallback(callback)
+        case .discogs:
+            return try discogsAuthCoordinator.consumeCallback(callback)
+        }
     }
 }

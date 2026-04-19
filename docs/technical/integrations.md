@@ -55,14 +55,14 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 ### Auth Method
 
 - Use OAuth 1.0a via browser with backend callback handling.
-- The `Cloudflare Worker` start endpoint obtains a request token, stores the temporary request-token secret in an encrypted HTTP-only cookie, and redirects the user to Discogs authorization.
+- The app opens a browser-targetable `Cloudflare Worker` start URL so the Worker can obtain a request token, store the temporary request-token secret in an encrypted HTTP-only cookie, and redirect in the same browser context to Discogs authorization.
 - The callback endpoint exchanges the authorized request token for an access token pair and deep-links the app with a short-lived encrypted payload.
 - Discogs consumer credentials are stored as protected deploy secrets and exposed to the Worker as runtime secrets only.
 
 ### Data Flow
 
 1. App calls `/auth/discogs/start`.
-2. Browser opens Discogs authorization.
+2. Worker stores the temporary request-token secret in a short-lived encrypted browser cookie and redirects to Discogs authorization.
 3. Backend callback exchanges for Discogs access token and secret.
 4. App stores them in secure storage.
 5. App calls `/discogs/me`, `/discogs/collection`, and `/discogs/search` through the backend proxy with the stored token pair.

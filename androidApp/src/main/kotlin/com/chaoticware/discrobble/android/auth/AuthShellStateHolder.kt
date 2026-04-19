@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 
 class AuthShellStateHolder(
     private val callbackParser: AuthCallbackParser = AuthCallbackParser(),
+    private val discogsAuthClient: DiscogsAuthClient,
     private val lastfmAuthClient: LastfmAuthClient,
     private val tokenStore: TokenStore,
 ) {
@@ -42,7 +43,10 @@ class AuthShellStateHolder(
                     pendingCallbacks = pendingCallbacks + (callback.provider to callback)
 
                     runCatching {
-                        lastfmAuthClient.consumeCallback(callback)
+                        when (callback.provider) {
+                            AuthProvider.LASTFM -> lastfmAuthClient.consumeCallback(callback)
+                            AuthProvider.DISCOGS -> discogsAuthClient.consumeCallback(callback)
+                        }
                     }.onSuccess { tokenSet ->
                         applyTokenSet(tokenSet)
                     }.onFailure { throwable ->
@@ -54,7 +58,7 @@ class AuthShellStateHolder(
                 is AuthCallbackResult.Failure -> {
                     pendingCallbacks = pendingCallbacks - result.failure.provider
                     authInFlightProviders = authInFlightProviders - result.failure.provider
-                    lastfmAuthClient.clearAttempt(result.failure.provider)
+                    clearAttempt(result.failure.provider)
                     lastErrorMessage = result.failure.message
                 }
             }
@@ -64,16 +68,14 @@ class AuthShellStateHolder(
     }
 
     suspend fun startAuth(provider: AuthProvider): String? {
-        if (provider != AuthProvider.LASTFM) {
-            lastErrorMessage = "Discogs auth is the next integration spike."
-            return null
-        }
-
         authInFlightProviders = authInFlightProviders + provider
 
         return runCatching {
             withContext(Dispatchers.IO) {
-                lastfmAuthClient.startAuth()
+                when (provider) {
+                    AuthProvider.LASTFM -> lastfmAuthClient.startAuth()
+                    AuthProvider.DISCOGS -> discogsAuthClient.startAuth()
+                }
             }
         }.onSuccess {
             lastErrorMessage = null
@@ -126,8 +128,15 @@ class AuthShellStateHolder(
 
     fun clearPendingCallback(provider: AuthProvider) {
         authInFlightProviders = authInFlightProviders - provider
-        lastfmAuthClient.clearAttempt(provider)
+        clearAttempt(provider)
         pendingCallbacks = pendingCallbacks - provider
         lastErrorMessage = null
+    }
+
+    private fun clearAttempt(provider: AuthProvider) {
+        when (provider) {
+            AuthProvider.LASTFM -> lastfmAuthClient.clearAttempt(provider)
+            AuthProvider.DISCOGS -> discogsAuthClient.clearAttempt(provider)
+        }
     }
 }
