@@ -357,7 +357,7 @@ private fun CandidateCard(
                 style = MaterialTheme.typography.bodySmall,
             )
 
-            if (!candidate.genres.isEmpty()) {
+            if (candidate.genres.isNotEmpty()) {
                 Text(
                     text = "Genres: ${candidate.genres.joinToString()}",
                     style = MaterialTheme.typography.bodySmall,

@@ -50,6 +50,8 @@ class AuthShellStateHolder(
                     }.onSuccess { tokenSet ->
                         applyTokenSet(tokenSet)
                     }.onFailure { throwable ->
+                        pendingCallbacks = pendingCallbacks - callback.provider
+                        clearAttempt(callback.provider)
                         authInFlightProviders = authInFlightProviders - callback.provider
                         lastErrorMessage = throwable.message
                     }

@@ -17,7 +17,7 @@
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
     <key>DISCROBBLE_WORKER_BASE_URL</key>
-    <string>http://127.0.0.1:8787</string>
+    <string>$(DISCROBBLE_WORKER_BASE_URL)</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>

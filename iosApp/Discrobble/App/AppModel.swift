@@ -37,6 +37,8 @@ final class AppModel: ObservableObject {
                     let tokenSet = try consumeCallback(callback)
                     applyTokenSet(tokenSet)
                 } catch {
+                    pendingCallbacks[callback.provider] = nil
+                    try? clearAttempt(for: callback.provider)
                     authInFlightProviders.remove(callback.provider)
                     lastErrorMessage = error.localizedDescription
                 }

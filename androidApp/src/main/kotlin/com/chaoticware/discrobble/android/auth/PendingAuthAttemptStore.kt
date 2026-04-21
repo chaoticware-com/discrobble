@@ -89,11 +89,28 @@ class EncryptedPendingAuthAttemptStore(
             ?: throw IllegalStateException("Pending auth attempt is missing a valid provider value.")
 
         return PendingAuthAttempt(
-            createdAt = getString("created_at"),
-            privateKeyPkcs8 = getString("private_key_pkcs8"),
+            createdAt = requireString(
+                field = "created_at",
+                errorMessage = "Pending auth attempt is missing a valid created_at value.",
+            ),
+            privateKeyPkcs8 = requireString(
+                field = "private_key_pkcs8",
+                errorMessage = "Pending auth attempt is missing a valid private_key_pkcs8 value.",
+            ),
             provider = provider,
-            publicKeyPem = getString("public_key_pem"),
+            publicKeyPem = requireString(
+                field = "public_key_pem",
+                errorMessage = "Pending auth attempt is missing a valid public_key_pem value.",
+            ),
         )
+    }
+
+    private fun JSONObject.requireString(
+        field: String,
+        errorMessage: String,
+    ): String {
+        return optString(field).takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException(errorMessage)
     }
 
     private fun PublicKey.toPem(): String {

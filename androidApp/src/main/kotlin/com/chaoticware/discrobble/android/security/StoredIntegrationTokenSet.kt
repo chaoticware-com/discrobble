@@ -9,4 +9,8 @@ data class StoredIntegrationTokenSet(
     val accessSecret: String?,
     val issuedAt: String,
     val expiresAt: String?,
-)
+) {
+    override fun toString(): String {
+        return "StoredIntegrationTokenSet(provider=$provider, username=$username, accessToken=[REDACTED], accessSecret=[REDACTED], issuedAt=$issuedAt, expiresAt=$expiresAt)"
+    }
+}

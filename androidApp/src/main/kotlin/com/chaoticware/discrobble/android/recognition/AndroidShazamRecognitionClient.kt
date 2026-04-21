@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -108,6 +109,10 @@ class AndroidShazamRecognitionClient(
 
             return@withContext parseMatchResult(matchResult)
         } catch (throwable: Throwable) {
+            if (throwable is CancellationException) {
+                throw throwable
+            }
+
             return@withContext AndroidShazamRecognitionAttemptResult.Failure(
                 throwable.message ?: throwable.javaClass.simpleName,
             )
@@ -141,6 +146,7 @@ class AndroidShazamRecognitionClient(
         val destination = ByteArray(targetSize)
         val audioRecord = createAudioRecord(bufferSize)
         var bytesWritten = 0
+        val originalPriority = Process.getThreadPriority(Process.myTid())
 
         activeAudioRecord = audioRecord
 
@@ -166,6 +172,9 @@ class AndroidShazamRecognitionClient(
                 bytesWritten += bytesRead
             }
         } finally {
+            runCatching {
+                Process.setThreadPriority(originalPriority)
+            }
             cancelActiveAttempt()
         }
 

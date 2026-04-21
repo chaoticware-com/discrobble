@@ -258,6 +258,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DISCROBBLE_WORKER_BASE_URL = "http://127.0.0.1:8787";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Discrobble/Support/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -281,6 +282,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DISCROBBLE_WORKER_BASE_URL = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Discrobble/Support/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

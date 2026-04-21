@@ -50,6 +50,9 @@ struct DiscogsAuthCoordinator {
         guard let attempt = try attemptStore.loadAttempt(for: .discogs) else {
             throw DiscogsAuthCoordinatorError.missingPendingAttempt
         }
+        defer {
+            try? attemptStore.removeAttempt(for: .discogs)
+        }
 
         let envelopeData = Data(callback.encryptedPayload.utf8)
         let envelope = try decoder.decode(EncryptedAuthEnvelope.self, from: envelopeData)
@@ -91,7 +94,6 @@ struct DiscogsAuthCoordinator {
             throw DiscogsAuthCoordinatorError.expiredPayload
         }
 
-        try attemptStore.removeAttempt(for: .discogs)
         return payload.asStoredTokenSet()
     }
 

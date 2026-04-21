@@ -66,6 +66,9 @@ struct LastfmAuthCoordinator {
         guard let attempt = try attemptStore.loadAttempt(for: .lastfm) else {
             throw LastfmAuthCoordinatorError.missingPendingAttempt
         }
+        defer {
+            try? attemptStore.removeAttempt(for: .lastfm)
+        }
 
         let envelopeData = Data(callback.encryptedPayload.utf8)
         let envelope = try decoder.decode(EncryptedAuthEnvelope.self, from: envelopeData)
@@ -107,7 +110,6 @@ struct LastfmAuthCoordinator {
             throw LastfmAuthCoordinatorError.expiredPayload
         }
 
-        try attemptStore.removeAttempt(for: .lastfm)
         return payload.asStoredTokenSet()
     }
 

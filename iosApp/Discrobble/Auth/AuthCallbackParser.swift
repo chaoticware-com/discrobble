@@ -58,7 +58,7 @@ struct AuthCallbackParser {
         fragmentComponents.query = fragment
 
         return Dictionary(
-            uniqueKeysWithValues: fragmentComponents
+            fragmentComponents
             .queryItems?
             .compactMap { item in
                 guard let value = item.value else {
@@ -66,7 +66,8 @@ struct AuthCallbackParser {
                 }
 
                 return (item.name, value)
-            } ?? []
+            } ?? [],
+            uniquingKeysWith: { _, last in last }
         )
     }
 }
