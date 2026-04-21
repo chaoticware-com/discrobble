@@ -15,6 +15,7 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 - Use browser-based auth with backend callback handling.
 - Do not use plaintext password entry in-app, even though Last.fm documents a mobile-session flow that accepts username and password.
 - The `Cloudflare Worker` start endpoint creates a signed auth context and redirects the user to Last.fm authorization.
+- The Worker accepts only the native `discrobble://auth/lastfm` spike callback or a preconfigured first-party HTTPS callback prefix; arbitrary HTTPS redirects are rejected.
 - The callback endpoint exchanges the token for a session and deep-links the app with a short-lived encrypted payload.
 - Last.fm API credentials are stored as protected deploy secrets and exposed to the Worker as runtime secrets only.
 
@@ -56,6 +57,7 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 
 - Use OAuth 1.0a via browser with backend callback handling.
 - The app opens a browser-targetable `Cloudflare Worker` start URL so the Worker can obtain a request token, store the temporary request-token secret in an encrypted HTTP-only cookie, and redirect in the same browser context to Discogs authorization.
+- The Worker accepts only the native `discrobble://auth/discogs` spike callback or a preconfigured first-party HTTPS callback prefix; arbitrary HTTPS redirects are rejected.
 - The callback endpoint exchanges the authorized request token for an access token pair and deep-links the app with a short-lived encrypted payload.
 - Discogs consumer credentials are stored as protected deploy secrets and exposed to the Worker as runtime secrets only.
 

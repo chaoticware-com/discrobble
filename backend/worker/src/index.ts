@@ -5,6 +5,7 @@ import { handleLastfmAuthCallback, handleLastfmAuthStart } from './lastfmAuth'
 import { handleLastfmNowPlaying, handleLastfmScrobble } from './lastfmWrites'
 
 export interface WorkerBindings {
+  AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES?: string
   AUTH_PAYLOAD_TTL_SECONDS?: string
   AUTH_STATE_SECRET: string
   AUTH_STATE_TTL_SECONDS?: string

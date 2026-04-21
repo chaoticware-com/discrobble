@@ -21,6 +21,8 @@
 
 This avoids durable backend storage while keeping provider secrets out of query parameters in plain text.
 
+`callback_url` must currently be either the native `discrobble://auth/{provider}` deep link used by the spike shells or a configured first-party HTTPS callback prefix. Arbitrary HTTPS callback URLs are rejected.
+
 If the backend has already validated the signed state and trusted the `callback_url`, callback failures should redirect back to the app with `#error_code=...&error_message=...` so the native shell can recover without leaving the user stranded in the browser.
 
 ### Encrypted Fragment Envelope Shape
@@ -78,8 +80,11 @@ All JSON responses from the current Worker routes also return `Cache-Control: no
 
 - `400 invalid_callback_url`
 - `400 invalid_device_public_key`
+- `400 invalid_payload`
 - `400 invalid_platform`
-- `400 auth_start_failed`
+- `500 auth_start_failed`
+
+`auth_start_failed` represents a backend-side bootstrap failure, not a client validation failure, so callers should treat it as potentially retriable after the service configuration or provider path is fixed.
 
 ## `GET /auth/lastfm/callback`
 
@@ -221,7 +226,7 @@ Example:
 ### Query Parameters
 
 - `page`: integer, required
-- `per_page`: integer, default `50`, max `100`
+- `per_page`: integer, default `10`, max `25`
 - `folder_id`: integer, default `0`
 
 ### Request Headers
@@ -234,7 +239,7 @@ Example:
 ```json
 {
   "page": 1,
-  "per_page": 50,
+  "per_page": 10,
   "pages": 10,
   "items": [
     {
@@ -264,6 +269,7 @@ Current normalization details from the spike:
 - `artist` is the joined `basic_information.artists[].name` string.
 - `formats` merges both the Discogs format `name` values and each `descriptions[]` value.
 - `tracklist` comes from a follow-up `/releases/{id}` fetch per item, and each track currently keeps only `position`, `title`, and nullable `duration`.
+- Because the spike still enriches each collection row with a follow-up release request, collection pages are currently capped at `25` items to keep upstream fan-out bounded.
 - `cover_image`, `instance_id`, `year`, and `duration` are nullable when Discogs omits them.
 
 ### Error Cases

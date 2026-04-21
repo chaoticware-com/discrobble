@@ -5,6 +5,7 @@ export function signLastfmParams(
   apiSecret: string,
 ): string {
   const signatureBase = Object.entries(params)
+    .filter(([key]) => key !== 'api_sig' && key !== 'format' && key !== 'callback')
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}${value}`)
     .join('')

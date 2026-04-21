@@ -11,6 +11,7 @@ import {
   encodeBase64Url,
   importDevicePublicKey,
   requireBinding,
+  resolveAllowedHttpsCallbackPrefixes,
   resolveSeconds,
   signState,
   toArrayBuffer,
@@ -23,6 +24,8 @@ const DISCOGS_ACCESS_TOKEN_URL = 'https://api.discogs.com/oauth/access_token'
 const DISCOGS_AUTHORIZE_URL = 'https://www.discogs.com/oauth/authorize'
 const DISCOGS_REQUEST_TOKEN_URL = 'https://api.discogs.com/oauth/request_token'
 const AUTH_CONTEXT_COOKIE_NAME = 'discrobble_discogs_auth'
+const COOKIE_KEY_INFO = new TextEncoder().encode('discrobble-discogs-auth-cookie:v1')
+const COOKIE_KEY_SALT = new TextEncoder().encode('discrobble-discogs-auth-cookie-salt:v1')
 
 type DiscogsSignedAuthState = SignedAuthState<'discogs'>
 
@@ -75,7 +78,11 @@ export async function handleDiscogsAuthStart(c: WorkerContext) {
   let callbackUrl: URL
 
   try {
-    callbackUrl = validateCallbackUrl(payload.callback_url, 'discogs')
+    callbackUrl = validateCallbackUrl(
+      payload.callback_url,
+      'discogs',
+      resolveAllowedHttpsCallbackPrefixes(c),
+    )
   } catch (error) {
     return jsonError(c, 400, 'invalid_callback_url', asErrorMessage(error))
   }
@@ -293,16 +300,25 @@ async function decryptCookiePayload(
 }
 
 async function deriveCookieKey(secret: string): Promise<CryptoKey> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
+  const hkdfKey = await crypto.subtle.importKey(
+    'raw',
     new TextEncoder().encode(secret),
+    'HKDF',
+    false,
+    ['deriveKey'],
   )
 
-  return crypto.subtle.importKey(
-    'raw',
-    digest,
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      info: toArrayBuffer(COOKIE_KEY_INFO),
+      salt: toArrayBuffer(COOKIE_KEY_SALT),
+    },
+    hkdfKey,
     {
       name: 'AES-GCM',
+      length: 256,
     },
     false,
     ['decrypt', 'encrypt'],

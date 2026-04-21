@@ -15,9 +15,9 @@ This document owns the current actionable work order for Discrobble. Phase seque
 - Phase 0 repo controls are now in place under `chaoticware-com`, including baseline repository security settings, protected `main`, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, configured GitHub environments, and release provenance scaffolding.
 - The first Worker scaffold now exists under `backend/worker/`.
 - The Gradle root, checked-in wrapper, shared KMP module tree, and native auth shells now exist.
-- The Worker and both native shells now complete the Last.fm auth spike end to end, including signed auth start requests, browser handoff, encrypted callback payloads, and secure local session storage.
+- The Worker and both native shells now complete the Last.fm auth spike end-to-end, including signed auth start requests, browser handoff, encrypted callback payloads, and secure local session storage.
 - The Worker now also implements the Last.fm `updateNowPlaying` and `track.scrobble` spike endpoints with request signing, normalized error mapping, and local timing-threshold enforcement for scrobbles when timing data is present.
-- The Worker and both native shells now also complete the Discogs auth spike end to end, including the browser-opened start route, encrypted request-token cookie handoff, encrypted callback payloads, and secure local token-pair storage.
+- The Worker and both native shells now also complete the Discogs auth spike end-to-end, including the browser-opened start route, encrypted request-token cookie handoff, encrypted callback payloads, and secure local token-pair storage.
 - The Worker now also proxies `/discogs/me`, `/discogs/collection`, and `/discogs/search` with OAuth-signed requests, normalized release payloads, and public-response validation against a real collection page and barcode search result.
 - The iPhone shell now also exposes a one-shot ShazamKit spike using `SHManagedSession`, microphone permission handling through `AVAudioApplication`, and a ranked candidate view that confirms the current native match shape.
 - The Android shell now also exposes a one-shot ShazamKit spike wired for Apple's local AAR-based SDK, records PCM `16-bit` mono microphone audio, and normalizes the documented `MatchResult.Match.matchedMediaItems` candidate shape while surfacing an actionable unavailable state when the local SDK or developer token is missing.
@@ -80,8 +80,8 @@ This document owns the current actionable work order for Discrobble. Phase seque
 
 ### Phase 1 Gate
 
-- Last.fm auth and signed write calls work end to end.
-- Discogs auth and collection reads work end to end.
+- Last.fm auth and signed write calls work end-to-end.
+- Discogs auth and collection reads work end-to-end.
 - Barcode lookup is validated against real records.
 - ShazamKit produces usable candidate data on both platforms.
 - API contracts and testing docs reflect the real spike findings rather than assumptions.

@@ -128,6 +128,7 @@ export async function verifyState<TState extends SignedAuthState>(
 export function validateCallbackUrl(
   rawCallbackUrl: string,
   provider: SignedAuthState['provider'],
+  allowedHttpsCallbackPrefixes: URL[] = [],
 ): URL {
   let callbackUrl: URL
 
@@ -157,7 +158,21 @@ export function validateCallbackUrl(
     throw new Error('The callback URL must use either the discrobble or https scheme.')
   }
 
+  if (!allowedHttpsCallbackPrefixes.some((prefix) => matchesAllowedHttpsCallbackPrefix(callbackUrl, prefix))) {
+    throw new Error(
+      `The callback URL must target discrobble://auth/${provider} or a configured first-party HTTPS callback prefix for the ${providerLabel(provider)} spike.`,
+    )
+  }
+
   return callbackUrl
+}
+
+export function resolveAllowedHttpsCallbackPrefixes(c: WorkerContext): URL[] {
+  return (c.env.AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .flatMap((value) => parseAllowedHttpsCallbackPrefix(value))
 }
 
 export async function importDevicePublicKey(devicePublicKeyPem: string): Promise<CryptoKey> {
@@ -258,6 +273,47 @@ function decodeBase64(base64: string): Uint8Array {
   }
 
   return bytes
+}
+
+function parseAllowedHttpsCallbackPrefix(rawPrefix: string): URL[] {
+  try {
+    const prefix = new URL(rawPrefix)
+
+    if (prefix.protocol !== 'https:' || prefix.search || prefix.hash) {
+      return []
+    }
+
+    return [prefix]
+  } catch {
+    return []
+  }
+}
+
+function matchesAllowedHttpsCallbackPrefix(
+  callbackUrl: URL,
+  allowedPrefix: URL,
+): boolean {
+  if (callbackUrl.origin !== allowedPrefix.origin) {
+    return false
+  }
+
+  return hasPathPrefix(callbackUrl.pathname, allowedPrefix.pathname)
+}
+
+function hasPathPrefix(
+  candidatePath: string,
+  prefixPath: string,
+): boolean {
+  if (prefixPath === '/') {
+    return true
+  }
+
+  if (candidatePath === prefixPath) {
+    return true
+  }
+
+  const normalizedPrefix = prefixPath.endsWith('/') ? prefixPath : `${prefixPath}/`
+  return candidatePath.startsWith(normalizedPrefix)
 }
 
 function encodeBase64(bytes: Uint8Array): string {

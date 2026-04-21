@@ -9,6 +9,7 @@ import {
   encryptPayload,
   importDevicePublicKey,
   requireBinding,
+  resolveAllowedHttpsCallbackPrefixes,
   resolveSeconds,
   signState,
   validateCallbackUrl,
@@ -48,15 +49,12 @@ class CallbackRedirectError extends Error {
 }
 
 export async function handleLastfmAuthStart(c: WorkerContext) {
-  const apiKey = requireBinding(c, 'LASTFM_API_KEY')
-  const stateSecret = requireBinding(c, 'AUTH_STATE_SECRET')
-
   let payload: AuthStartRequest
 
   try {
     payload = await c.req.json<AuthStartRequest>()
   } catch {
-    return jsonError(c, 400, 'auth_start_failed', 'The auth request body must be valid JSON.')
+    return jsonError(c, 400, 'invalid_payload', 'The auth request body must be valid JSON.')
   }
 
   if (payload.platform !== 'ios' && payload.platform !== 'android') {
@@ -66,7 +64,11 @@ export async function handleLastfmAuthStart(c: WorkerContext) {
   let callbackUrl: URL
 
   try {
-    callbackUrl = validateCallbackUrl(payload.callback_url, 'lastfm')
+    callbackUrl = validateCallbackUrl(
+      payload.callback_url,
+      'lastfm',
+      resolveAllowedHttpsCallbackPrefixes(c),
+    )
   } catch (error) {
     return jsonError(c, 400, 'invalid_callback_url', asErrorMessage(error))
   }
@@ -82,34 +84,45 @@ export async function handleLastfmAuthStart(c: WorkerContext) {
     )
   }
 
-  const now = new Date()
-  const state: LastfmSignedAuthState = {
-    callback_url: callbackUrl.toString(),
-    device_public_key: payload.device_public_key,
-    expires_at: new Date(
-      now.getTime() + resolveSeconds(c, 'AUTH_STATE_TTL_SECONDS', CALLBACK_STATE_TTL_SECONDS) * 1000,
-    ).toISOString(),
-    issued_at: now.toISOString(),
-    platform: payload.platform,
-    provider: 'lastfm',
+  try {
+    const apiKey = requireBinding(c, 'LASTFM_API_KEY')
+    const stateSecret = requireBinding(c, 'AUTH_STATE_SECRET')
+    const now = new Date()
+    const state: LastfmSignedAuthState = {
+      callback_url: callbackUrl.toString(),
+      device_public_key: payload.device_public_key,
+      expires_at: new Date(
+        now.getTime() + resolveSeconds(c, 'AUTH_STATE_TTL_SECONDS', CALLBACK_STATE_TTL_SECONDS) * 1000,
+      ).toISOString(),
+      issued_at: now.toISOString(),
+      platform: payload.platform,
+      provider: 'lastfm',
+    }
+    const signedState = await signState(state, stateSecret)
+    const callback = new URL('/auth/lastfm/callback', c.req.url)
+    callback.searchParams.set('state', signedState)
+
+    const authorizeUrl = new URL(LASTFM_AUTHORIZE_URL)
+    authorizeUrl.searchParams.set('api_key', apiKey)
+    authorizeUrl.searchParams.set('cb', callback.toString())
+
+    return c.json(
+      {
+        authorize_url: authorizeUrl.toString(),
+      },
+      200,
+      {
+        'Cache-Control': 'no-store',
+      },
+    )
+  } catch {
+    return jsonError(
+      c,
+      500,
+      'auth_start_failed',
+      'Discrobble could not bootstrap the Last.fm auth flow.',
+    )
   }
-  const signedState = await signState(state, stateSecret)
-  const callback = new URL('/auth/lastfm/callback', c.req.url)
-  callback.searchParams.set('state', signedState)
-
-  const authorizeUrl = new URL(LASTFM_AUTHORIZE_URL)
-  authorizeUrl.searchParams.set('api_key', apiKey)
-  authorizeUrl.searchParams.set('cb', callback.toString())
-
-  return c.json(
-    {
-      authorize_url: authorizeUrl.toString(),
-    },
-    200,
-    {
-      'Cache-Control': 'no-store',
-    },
-  )
 }
 
 export async function handleLastfmAuthCallback(c: WorkerContext) {

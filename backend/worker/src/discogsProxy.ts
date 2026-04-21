@@ -2,6 +2,9 @@ import { type WorkerContext, requireBinding } from './authFlow'
 import { buildDiscogsAuthorizationHeader, DISCOGS_USER_AGENT } from './discogsOAuth'
 
 const DISCOGS_COLLECTION_ROOT = 'https://api.discogs.com/users'
+const DISCOGS_COLLECTION_DEFAULT_PER_PAGE = 10
+const DISCOGS_COLLECTION_MAX_PER_PAGE = 25
+const DISCOGS_FETCH_TIMEOUT_MS = 10_000
 const DISCOGS_IDENTITY_URL = 'https://api.discogs.com/oauth/identity'
 const DISCOGS_RELEASES_ROOT = 'https://api.discogs.com/releases'
 const DISCOGS_SEARCH_URL = 'https://api.discogs.com/database/search'
@@ -117,7 +120,11 @@ export async function handleDiscogsCollection(c: WorkerContext) {
   }
 
   const page = parsePositiveInteger(c.req.query('page'), 1)
-  const perPage = clampPositiveInteger(c.req.query('per_page'), 50, 100)
+  const perPage = clampPositiveInteger(
+    c.req.query('per_page'),
+    DISCOGS_COLLECTION_DEFAULT_PER_PAGE,
+    DISCOGS_COLLECTION_MAX_PER_PAGE,
+  )
   const folderId = parseNonNegativeInteger(c.req.query('folder_id'), 0)
   const identity = await fetchDiscogsIdentity(c, credentials.value)
 
@@ -399,13 +406,29 @@ async function signedDiscogsFetch(
     url,
   })
 
-  return fetch(url, {
-    headers: {
-      Authorization: authorization,
-      'User-Agent': DISCOGS_USER_AGENT,
-    },
-    method: 'GET',
-  })
+  try {
+    return await fetch(url, {
+      signal: AbortSignal.timeout(DISCOGS_FETCH_TIMEOUT_MS),
+      headers: {
+        Authorization: authorization,
+        'User-Agent': DISCOGS_USER_AGENT,
+      },
+      method: 'GET',
+    })
+  } catch (error) {
+    const message = error instanceof Error && (
+      error.name === 'AbortError' || error.name === 'TimeoutError'
+    )
+      ? `Discogs did not respond within ${DISCOGS_FETCH_TIMEOUT_MS}ms.`
+      : 'Discogs could not be reached before the request completed.'
+
+    return new Response(JSON.stringify({ message }), {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      status: 502,
+    })
+  }
 }
 
 function splitSearchTitle(rawTitle: string): [string, string] {

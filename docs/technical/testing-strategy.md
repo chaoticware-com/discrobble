@@ -80,7 +80,7 @@
 Phase 0 wires up `ci/docs` and `ci/workflows` first. The remaining lanes come online as the corresponding mobile and backend scaffolding lands.
 
 - `ci/docs`
-  - markdown link checks, stale-doc checks, and required-doc coverage
+  - Markdown link checks, stale-doc checks, and required-doc coverage
 - `ci/shared`
   - shared Kotlin compile, unit tests, and persistence tests
 - `ci/android`

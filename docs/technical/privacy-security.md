@@ -23,7 +23,7 @@ Discrobble's product promise is that it does not build a personal cloud history 
 - Never commit provider keys or secrets to the client bundle.
 - Encrypt auth handoff payloads to the device public key created for that auth attempt.
 - Use HTTPS for every app-to-backend and backend-to-provider call outside local developer loopback flows.
-- Allow loopback HTTP only for local simulator or emulator spikes that target a developer-run Worker instance.
+- Allow loopback HTTP only in debug-only local development against a developer-run Worker on `localhost`, `127.0.0.1`, or `::1`; never allow that exception in CI, staging, or production builds.
 - Redact provider tokens, barcode values, and raw payload bodies from backend logs.
 - Disable analytics SDKs in MVP unless they are proven necessary and privacy-compatible.
 
