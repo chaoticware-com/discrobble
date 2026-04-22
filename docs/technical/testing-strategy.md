@@ -25,8 +25,8 @@
 | T12 | F7 | U1, U8 | Inspect backend behavior during normal use | No durable user data is written server-side |
 | T13 | Repo policy | N/A | Open a pull request that lacks required checks or CodeRabbit status | Merge remains blocked by branch protection policy |
 | T14 | Workflow policy | N/A | Change a workflow file with invalid syntax or unsafe structure | Workflow lint fails before merge |
-| T15 | Release policy | N/A | Create a version tag and run the tagged release workflow | Release metadata, attestation, and GitHub Release all link back to the tag and workflow run; the Worker deploy runs only when the protected production deploy gate is enabled |
-| T16 | Provenance policy | N/A | Inspect a tagged release from the public repository | Commit SHA, tag, workflow run, and attestation are visible and consistent; deployment metadata joins the chain once the production deploy gate is enabled |
+| T15 | Release policy | N/A | Create a version tag and run the tagged release workflow | Release metadata, a deployable Worker bundle, and their attestations all link back to the tag and workflow run; the Worker deploy runs only when the protected production deploy gate is enabled |
+| T16 | Provenance policy | N/A | Inspect a tagged release from the public repository | Commit SHA, tag, workflow run, release metadata, and the attested Worker bundle are visible and consistent; deployment metadata joins the chain once the production deploy gate is enabled |
 | T17 | F4 | U5 | iPhone one-shot ShazamKit spike returns ranked media-item metadata | Title, artist, IDs, offsets, skew, and optional confidence are visible in the shell |
 | T18 | F4 | U5 | Android build without local ShazamKit AAR or developer token | App still assembles and the shell surfaces an actionable unavailable state |
 | T19 | F4 | U5 | Android one-shot ShazamKit spike with local AAR and developer token | `MatchResult.Match.matchedMediaItems` fields are surfaced in the shell |
@@ -92,7 +92,7 @@ Phase 0 wires up `ci/docs` and `ci/workflows` first. The remaining lanes come on
 - `ci/workflows`
   - workflow linting and policy checks
 - `release/provenance`
-  - tag-based artifact generation, main-commit validation, artifact attestation, and deployment metadata verification once production deploy is enabled
+  - tag-based artifact generation, main-commit validation, Worker bundle attestation, and deployment metadata verification once production deploy is enabled
 
 ## Platform Coverage
 
@@ -126,6 +126,7 @@ Phase 0 wires up `ci/docs` and `ci/workflows` first. The remaining lanes come on
 - app terminated with queued scrobbles pending
 - workflow change breaks required checks
 - release tag missing provenance metadata
+- release tag missing the attested Worker bundle artifact
 - attempted production deploy outside GitHub Actions policy
 
 ## Exit Criteria Before Coding Beyond Spikes
@@ -136,4 +137,4 @@ Phase 0 wires up `ci/docs` and `ci/workflows` first. The remaining lanes come on
 - Recognition can produce a usable candidate that maps onto a selected Discogs tracklist.
 - Queue replay behavior is deterministic under offline and transient Last.fm failures.
 - The required GitHub Actions lanes are documented and runnable.
-- Tagged releases can be traced through workflow run and provenance metadata, with the deployment record joining once production deploy is enabled.
+- Tagged releases can be traced through workflow run, metadata, and the attested Worker bundle, with the deployment record joining once production deploy is enabled.

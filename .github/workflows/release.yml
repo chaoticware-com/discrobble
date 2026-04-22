@@ -60,11 +60,50 @@ jobs:
           name: release-metadata
           path: release-metadata.json
 
+  worker-bundle:
+    name: release/worker-bundle
+    runs-on: ubuntu-latest
+    needs:
+      - metadata
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Install workspace dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Build deployable Worker bundle
+        working-directory: backend/worker
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/release-worker-bundle"
+
+          pnpm exec wrangler deploy \
+            --dry-run \
+            --outdir "$GITHUB_WORKSPACE/release-worker-bundle" \
+            --metafile "$GITHUB_WORKSPACE/release-worker-bundle/bundle-meta.json"
+
+      - name: Archive deployable Worker bundle
+        run: |
+          tar -czf release-worker-bundle.tgz -C release-worker-bundle .
+
+      - name: Upload deployable Worker bundle artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-worker-bundle
+          path: |
+            release-worker-bundle
+            release-worker-bundle.tgz
+
   provenance:
     name: release/provenance
     runs-on: ubuntu-latest
     needs:
       - metadata
+      - worker-bundle
     permissions:
       contents: read
       id-token: write
@@ -76,6 +115,12 @@ jobs:
         with:
           name: release-metadata
           path: release-metadata
+
+      - name: Download deployable Worker bundle artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-worker-bundle
+          path: release-worker
 
       - name: Validate release metadata contents
         run: |
@@ -95,10 +140,35 @@ jobs:
           print("release metadata matches the current workflow context")
           PY
 
+      - name: Verify deployable Worker bundle contents
+        run: |
+          required_paths=(
+            release-worker/release-worker-bundle/index.js
+            release-worker/release-worker-bundle/bundle-meta.json
+            release-worker/release-worker-bundle.tgz
+          )
+
+          for required_path in "${required_paths[@]}"; do
+            if [ ! -f "$required_path" ]; then
+              echo "::error::Missing required release artifact: $required_path"
+              exit 1
+            fi
+          done
+
       - name: Attest release metadata artifact
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
         with:
           subject-path: release-metadata/release-metadata.json
+
+      - name: Attest deployable Worker bundle
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-path: release-worker/release-worker-bundle/index.js
+
+      - name: Attest archived Worker release asset
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-path: release-worker/release-worker-bundle.tgz
 
   github-release:
     name: release/github
@@ -106,6 +176,7 @@ jobs:
     needs:
       - metadata
       - provenance
+      - worker-bundle
     permissions:
       contents: write
     steps:
@@ -115,16 +186,26 @@ jobs:
           name: release-metadata
           path: release-metadata
 
+      - name: Download deployable Worker bundle artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-worker-bundle
+          path: release-worker
+
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "${GITHUB_REF_NAME}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" release-metadata/release-metadata.json \
+            gh release upload "${GITHUB_REF_NAME}" \
+              release-metadata/release-metadata.json \
+              release-worker/release-worker-bundle.tgz \
               --repo "$GITHUB_REPOSITORY" \
               --clobber
           else
-            gh release create "${GITHUB_REF_NAME}" release-metadata/release-metadata.json \
+            gh release create "${GITHUB_REF_NAME}" \
+              release-metadata/release-metadata.json \
+              release-worker/release-worker-bundle.tgz \
               --repo "$GITHUB_REPOSITORY" \
               --title "${GITHUB_REF_NAME}" \
               --notes "Phase 0 release workflow skeleton."
@@ -141,7 +222,7 @@ jobs:
     steps:
       - name: Report gated production deployment
         run: |
-          echo "Production Worker deployment remains disabled until ENABLE_WORKER_PROD_DEPLOY is set to true and the protected Cloudflare deploy secrets are configured."
+          echo "Production Worker deployment remains disabled until ENABLE_WORKER_PROD_DEPLOY is set to true and the protected runtime secrets have been rotated through the manual rotate-worker-secrets workflow."
 
   worker:
     name: release/worker
@@ -151,6 +232,7 @@ jobs:
       - metadata
       - provenance
       - github-release
+      - worker-bundle
     environment: production
     permissions:
       contents: read
@@ -161,13 +243,8 @@ jobs:
 
       - name: Verify production deployment prerequisites
         env:
-          AUTH_STATE_SECRET: ${{ secrets.AUTH_STATE_SECRET }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          DISCOGS_CONSUMER_KEY: ${{ secrets.DISCOGS_CONSUMER_KEY }}
-          DISCOGS_CONSUMER_SECRET: ${{ secrets.DISCOGS_CONSUMER_SECRET }}
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         run: |
           required_files=(
             backend/worker/package.json
@@ -182,13 +259,8 @@ jobs:
           done
 
           required_secrets=(
-            AUTH_STATE_SECRET
             CLOUDFLARE_ACCOUNT_ID
             CLOUDFLARE_API_TOKEN
-            DISCOGS_CONSUMER_KEY
-            DISCOGS_CONSUMER_SECRET
-            LASTFM_API_KEY
-            LASTFM_API_SECRET
           )
 
           for secret_name in "${required_secrets[@]}"; do
@@ -198,43 +270,32 @@ jobs:
             fi
           done
 
+      - name: Download deployable Worker bundle artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-worker-bundle
+          path: release-worker
+
       - name: Install workspace dependencies
         run: |
           corepack enable
           pnpm install --frozen-lockfile
 
-      - name: Sync Worker runtime secrets
+      - name: Deploy attested Worker bundle to production
         working-directory: backend/worker
         env:
-          AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES: ${{ vars.AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES }}
-          AUTH_STATE_SECRET: ${{ secrets.AUTH_STATE_SECRET }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          DISCOGS_CONSUMER_KEY: ${{ secrets.DISCOGS_CONSUMER_KEY }}
-          DISCOGS_CONSUMER_SECRET: ${{ secrets.DISCOGS_CONSUMER_SECRET }}
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         run: |
-          required_runtime_secrets=(
-            AUTH_STATE_SECRET
-            DISCOGS_CONSUMER_KEY
-            DISCOGS_CONSUMER_SECRET
-            LASTFM_API_KEY
-            LASTFM_API_SECRET
-          )
+          bundle_path="${GITHUB_WORKSPACE}/release-worker/release-worker-bundle/index.js"
 
-          for secret_name in "${required_runtime_secrets[@]}"; do
-            printf '%s' "${!secret_name}" | pnpm exec wrangler secret put "$secret_name"
-          done
-
-          if [ -n "${AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES:-}" ]; then
-            printf '%s' "$AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES" | pnpm exec wrangler secret put AUTH_ALLOWED_HTTPS_CALLBACK_PREFIXES
+          if [ ! -f "$bundle_path" ]; then
+            echo "::error::Missing deployable Worker bundle at $bundle_path"
+            exit 1
           fi
 
-      - name: Deploy Worker to production
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          corepack enable
-          pnpm worker:deploy
+          pnpm exec wrangler deploy "$bundle_path" \
+            --no-bundle \
+            --config wrangler.toml \
+            --tag "${GITHUB_REF_NAME}" \
+            --message "Release ${GITHUB_REF_NAME} (${GITHUB_SHA})"

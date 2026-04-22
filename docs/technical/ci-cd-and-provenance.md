@@ -67,16 +67,24 @@ Once deploy credentials and Worker behavior are wired, the workflow will:
 
 Runs on version tags matching `v*`.
 
-Phase 0 adds the tag trigger, a guard that rejects tags not contained in `main`, the release metadata artifact, release metadata attestation, and GitHub Release publication. The Worker production deploy job stays explicitly gated behind `ENABLE_WORKER_PROD_DEPLOY=true` until the protected Cloudflare deploy credentials and runtime secrets are configured, so Phase 0 does not create a production deployment record by default.
+Phase 0 adds the tag trigger, a guard that rejects tags not contained in `main`, the release metadata artifact, a built Worker bundle artifact, attestations for both, and GitHub Release publication. The Worker production deploy job stays explicitly gated behind `ENABLE_WORKER_PROD_DEPLOY=true` until the protected Cloudflare deploy credentials are configured and the runtime secrets have been rotated through the manual secret-rotation workflow, so Phase 0 does not create a production deployment record by default.
 
 Once `ENABLE_WORKER_PROD_DEPLOY` is enabled and the protected deploy credentials are wired, the workflow expands to:
 
-- rebuilds and retests release outputs
+- rebuilds release outputs and consumes the attested Worker bundle for production deploy
 - uploads release artifacts
 - generates artifact attestations where supported
-- deploys the Worker to the `production` GitHub environment
+- deploys the attested Worker bundle to the `production` GitHub environment
 - creates or updates the GitHub Release
 - records the deployment in GitHub
+
+### `rotate-worker-secrets.yml`
+
+Runs only through GitHub Actions as a manually dispatched maintainer path for production runtime secret rotation.
+
+- uses the protected `production` GitHub environment
+- writes Worker runtime secrets to Cloudflare outside the tagged release path
+- must be run before enabling or relying on the production deploy job in `release.yml`
 
 ### `mobile-beta.yml`
 
@@ -101,7 +109,7 @@ Runs through GitHub Actions for internal mobile distribution.
 
 - GitHub environment secrets are the operational control point for deployment credentials and provider app secrets.
 - Cloudflare deployment credentials such as `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are stored in GitHub secrets.
-- Runtime provider secrets are injected by GitHub Actions into Cloudflare Worker secrets during controlled deploy workflows.
+- Runtime provider secrets are rotated into Cloudflare Worker secrets through the dedicated manual `rotate-worker-secrets.yml` workflow, not during tagged releases.
 - Secrets never live in source control, local scripts committed to the repo, or plaintext workflow files.
 
 ## Action and Workflow Rules
@@ -125,7 +133,7 @@ For every production release, the public repository should expose:
 
 GitHub artifact attestations are required for deployable artifacts where supported by the workflow and artifact type.
 
-During Phase 0, the release workflow attests the release metadata artifact so the verification chain exists before the Worker binary or bundle is available. Once the Worker deploy step is live, that attestation coverage extends to the deployable Worker artifact as part of the tagged release flow.
+During Phase 0, the release workflow attests both the release metadata artifact and the built Worker bundle so the verification chain exists before production deploys are enabled by default. Once the Worker deploy step is live, that attested Worker bundle becomes the artifact consumed by the tagged production deploy flow.
 
 ## How A User Verifies Production
 
@@ -134,8 +142,8 @@ During Phase 0, the release workflow attests the release metadata artifact so th
 1. Open the public GitHub Release for the version tag.
 2. Confirm the release points to the expected commit SHA.
 3. Open the linked GitHub Actions release workflow run.
-4. Inspect the attached `release-metadata.json` artifact and its GitHub attestation.
-5. Confirm the metadata artifact agrees on tag, commit SHA, workflow name, and run identifier.
+4. Inspect the attached `release-metadata.json` and `release-worker-bundle.tgz` assets plus their GitHub attestations.
+5. Confirm the metadata artifact agrees on tag, commit SHA, workflow name, and run identifier, then confirm the Worker bundle expands to the expected `index.js` and `bundle-meta.json`.
 
 ### Full Worker Verification Chain
 
@@ -148,6 +156,6 @@ Once the production deploy step is live, extend the verification path by:
 ## Cloudflare Worker Deployment Rules
 
 - Worker deployments happen through `Wrangler` in GitHub Actions only.
-- Production runtime secrets are set through the GitHub-controlled deployment path and stored in Cloudflare as Worker secrets.
+- Production runtime secrets are rotated through the dedicated GitHub-controlled secret-rotation workflow and stored in Cloudflare as Worker secrets.
 - Direct dashboard edits to production config or secrets are out of policy.
 - Preview deployments may exist, but only through the GitHub Actions pipeline.
