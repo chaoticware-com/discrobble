@@ -57,28 +57,53 @@ class EncryptedPendingAuthAttemptStore(
     }
 
     override fun loadAttempt(provider: AuthProvider): PendingAuthAttempt? {
-        val encryptedPayload = sharedPreferences.getString(payloadKey(provider), null) ?: return null
-        val iv = sharedPreferences.getString(ivKey(provider), null) ?: return null
-        val decryptedPayload = cipher.decrypt(
-            encryptedPayload = encryptedPayload,
-            iv = iv,
-        )
+        val encryptedPayload = sharedPreferences.getString(payloadKey(provider), null)
+        val iv = sharedPreferences.getString(ivKey(provider), null)
 
-        return JSONObject(decryptedPayload).toPendingAuthAttempt()
+        if (encryptedPayload.isNullOrBlank() || iv.isNullOrBlank()) {
+            clearStoredAttempt(provider, strict = false)
+            return null
+        }
+
+        return runCatching {
+            val decryptedPayload = cipher.decrypt(
+                encryptedPayload = encryptedPayload,
+                iv = iv,
+            )
+            val attempt = JSONObject(decryptedPayload).toPendingAuthAttempt()
+
+            check(attempt.provider == provider) {
+                "Pending auth attempt provider mismatch for ${provider.rawValue}."
+            }
+
+            attempt
+        }.getOrElse {
+            clearStoredAttempt(provider, strict = false)
+            null
+        }
     }
 
     override fun removeAttempt(provider: AuthProvider) {
-        check(
-            sharedPreferences.edit()
-                .remove(payloadKey(provider))
-                .remove(ivKey(provider))
-                .commit(),
-        ) { "Failed to clear pending auth attempt for ${provider.rawValue}." }
+        clearStoredAttempt(provider, strict = true)
     }
 
     private fun payloadKey(provider: AuthProvider): String = "pending-auth.${provider.rawValue}.payload"
 
     private fun ivKey(provider: AuthProvider): String = "pending-auth.${provider.rawValue}.iv"
+
+    private fun clearStoredAttempt(
+        provider: AuthProvider,
+        strict: Boolean,
+    ) {
+        val committed = sharedPreferences.edit()
+            .remove(payloadKey(provider))
+            .remove(ivKey(provider))
+            .commit()
+
+        if (strict) {
+            check(committed) { "Failed to clear pending auth attempt for ${provider.rawValue}." }
+        }
+    }
 
     private fun PendingAuthAttempt.toJson(): JSONObject {
         return JSONObject()
