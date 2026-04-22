@@ -102,7 +102,8 @@ Runs through GitHub Actions for internal mobile distribution.
   - used for non-production preview deploys
   - uses non-production credentials only
 - `production`
-  - used only from tagged release workflows after the production deploy gate is enabled
+  - used by tagged release workflows after the production deploy gate is enabled
+  - also used by the manually dispatched `rotate-worker-secrets.yml` workflow for runtime secret rotation
   - protected by maintainer approval and restricted secret access
 
 ### Secret Model
