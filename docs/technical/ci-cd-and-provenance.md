@@ -67,9 +67,9 @@ Once deploy credentials and Worker behavior are wired, the workflow will:
 
 Runs on version tags matching `v*`.
 
-Phase 0 adds the tag trigger, release metadata artifact, release metadata attestation, and `production` environment gate. The actual Worker deploy step stays a placeholder until deploy credentials and Worker behavior are wired into the repo.
+Phase 0 adds the tag trigger, a guard that rejects tags not contained in `main`, the release metadata artifact, release metadata attestation, and GitHub Release publication. The Worker production deploy job stays explicitly gated behind `ENABLE_WORKER_PROD_DEPLOY=true` until the protected Cloudflare deploy credentials and runtime secrets are configured, so Phase 0 does not create a production deployment record by default.
 
-Once deploy credentials and Worker behavior are wired, the workflow expands to:
+Once `ENABLE_WORKER_PROD_DEPLOY` is enabled and the protected deploy credentials are wired, the workflow expands to:
 
 - rebuilds and retests release outputs
 - uploads release artifacts
@@ -94,7 +94,7 @@ Runs through GitHub Actions for internal mobile distribution.
   - used for non-production preview deploys
   - uses non-production credentials only
 - `production`
-  - used only from tagged release workflows
+  - used only from tagged release workflows after the production deploy gate is enabled
   - protected by maintainer approval and restricted secret access
 
 ### Secret Model
@@ -108,6 +108,7 @@ Runs through GitHub Actions for internal mobile distribution.
 
 - Workflow files live only in `.github/workflows/`.
 - Actions must be pinned to immutable commit SHAs before the first production deployment.
+- Release tags must point to commits already contained in protected `main`.
 - Reusable workflows are preferred when multiple pipelines share the same job logic.
 - Workflow changes are treated as security-sensitive changes and must receive maintainer review.
 
