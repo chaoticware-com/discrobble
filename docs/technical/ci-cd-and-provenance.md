@@ -71,7 +71,7 @@ Phase 0 adds the tag trigger, a guard that rejects tags not contained in `main`,
 
 Once `ENABLE_WORKER_PROD_DEPLOY` is enabled and the protected deploy credentials are wired, the workflow expands to:
 
-- rebuilds release outputs and consumes the attested Worker bundle for production deploy
+- builds the Worker release bundle once, attests it, and deploys that same attested bundle to production
 - uploads release artifacts
 - generates artifact attestations where supported
 - deploys the attested Worker bundle to the `production` GitHub environment
@@ -144,7 +144,7 @@ During Phase 0, the release workflow attests both the release metadata artifact 
 2. Confirm the release points to the expected commit SHA.
 3. Open the linked GitHub Actions release workflow run.
 4. Inspect the attached `release-metadata.json` and `release-worker-bundle.tgz` assets plus their GitHub attestations.
-5. Confirm the metadata artifact agrees on tag, commit SHA, workflow name, and run identifier, then confirm the Worker bundle expands to the expected `index.js` and `bundle-meta.json`.
+5. Confirm the metadata artifact agrees on tag, commit SHA, workflow name, and run identifier, then confirm the Worker bundle expands to the expected `index.js` and `bundle-meta.json`. `index.js` is the compiled Worker entrypoint, and `bundle-meta.json` is Wrangler's bundle metadata for that build.
 
 ### Full Worker Verification Chain
 

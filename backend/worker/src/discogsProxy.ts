@@ -5,6 +5,7 @@ const DISCOGS_COLLECTION_ROOT = 'https://api.discogs.com/users'
 const DISCOGS_COLLECTION_DEFAULT_PER_PAGE = 10
 const DISCOGS_COLLECTION_MAX_PER_PAGE = 25
 const DISCOGS_FETCH_TIMEOUT_MS = 10_000
+const DISCOGS_RELEASE_DETAIL_CONCURRENCY = 4
 const DISCOGS_IDENTITY_URL = 'https://api.discogs.com/oauth/identity'
 const DISCOGS_RELEASES_ROOT = 'https://api.discogs.com/releases'
 const DISCOGS_SEARCH_URL = 'https://api.discogs.com/database/search'
@@ -146,15 +147,17 @@ export async function handleDiscogsCollection(c: WorkerContext) {
 
   const payload = await response.json() as DiscogsCollectionResponse
   const fetchedAt = new Date().toISOString()
-  const items = await Promise.all(
-    (payload.releases ?? []).map(async (item) => {
+  const items = await mapWithConcurrency(
+    payload.releases ?? [],
+    DISCOGS_RELEASE_DETAIL_CONCURRENCY,
+    async (item) => {
       const releaseId = item.basic_information?.id ?? item.id
       const releaseDetail = releaseId
         ? await fetchReleaseDetail(c, credentials.value, releaseId)
         : null
 
       return normalizeCollectionItem(item, releaseDetail, fetchedAt)
-    }),
+    },
   )
 
   return c.json(
@@ -311,6 +314,32 @@ function collectBarcodeValues(detail: DiscogsReleaseDetailResponse | null): stri
     ?? []
 }
 
+async function mapWithConcurrency<T, TResult>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<TResult>,
+): Promise<TResult[]> {
+  if (items.length === 0) {
+    return []
+  }
+
+  const results = new Array<TResult>(items.length)
+  let nextIndex = 0
+  const workerCount = Math.min(concurrency, items.length)
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex
+        nextIndex += 1
+        results[currentIndex] = await mapper(items[currentIndex])
+      }
+    }),
+  )
+
+  return results
+}
+
 function normalizeCollectionItem(
   item: DiscogsCollectionItem,
   detail: DiscogsReleaseDetailResponse | null,
@@ -422,8 +451,14 @@ async function signedDiscogsFetch(
       ? `Discogs did not respond within ${DISCOGS_FETCH_TIMEOUT_MS}ms.`
       : 'Discogs could not be reached before the request completed.'
 
-    return new Response(JSON.stringify({ message }), {
+    return new Response(JSON.stringify({
+      error: {
+        code: 'discogs_unavailable',
+        message,
+      },
+    }), {
       headers: {
+        'Cache-Control': 'no-store',
         'Content-Type': 'application/json; charset=utf-8',
       },
       status: 502,
@@ -507,8 +542,13 @@ async function mapDiscogsFailure(
 
 function extractDiscogsMessage(bodyText: string): string | null {
   try {
-    const payload = JSON.parse(bodyText) as { message?: string }
-    return payload.message?.trim() || null
+    const payload = JSON.parse(bodyText) as {
+      error?: {
+        message?: string
+      }
+      message?: string
+    }
+    return payload.error?.message?.trim() || payload.message?.trim() || null
   } catch {
     return bodyText.trim() || null
   }
