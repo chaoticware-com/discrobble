@@ -15,6 +15,7 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 - Use browser-based auth with backend callback handling.
 - Do not use plaintext password entry in-app, even though Last.fm documents a mobile-session flow that accepts username and password.
 - The `Cloudflare Worker` start endpoint creates a signed auth context and redirects the user to Last.fm authorization.
+- The Worker accepts only the native `discrobble://auth/lastfm` spike callback or a preconfigured first-party HTTPS callback prefix; arbitrary HTTPS redirects are rejected.
 - The callback endpoint exchanges the token for a session and deep-links the app with a short-lived encrypted payload.
 - Last.fm API credentials are stored as protected deploy secrets and exposed to the Worker as runtime secrets only.
 
@@ -55,14 +56,15 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 ### Auth Method
 
 - Use OAuth 1.0a via browser with backend callback handling.
-- The `Cloudflare Worker` start endpoint obtains a request token, stores the temporary request-token secret in an encrypted HTTP-only cookie, and redirects the user to Discogs authorization.
+- The app opens a browser-targetable `Cloudflare Worker` start URL so the Worker can obtain a request token, store the temporary request-token secret in an encrypted HTTP-only cookie, and redirect in the same browser context to Discogs authorization.
+- The Worker accepts only the native `discrobble://auth/discogs` spike callback or a preconfigured first-party HTTPS callback prefix; arbitrary HTTPS redirects are rejected.
 - The callback endpoint exchanges the authorized request token for an access token pair and deep-links the app with a short-lived encrypted payload.
 - Discogs consumer credentials are stored as protected deploy secrets and exposed to the Worker as runtime secrets only.
 
 ### Data Flow
 
 1. App calls `/auth/discogs/start`.
-2. Browser opens Discogs authorization.
+2. Worker stores the temporary request-token secret in a short-lived encrypted browser cookie and redirects to Discogs authorization.
 3. Backend callback exchanges for Discogs access token and secret.
 4. App stores them in secure storage.
 5. App calls `/discogs/me`, `/discogs/collection`, and `/discogs/search` through the backend proxy with the stored token pair.
@@ -96,16 +98,57 @@ General deploy and provenance policy is owned by [CI/CD and Provenance](ci-cd-an
 
 ### Platform Strategy
 
-- iPhone: use native ShazamKit integration through Swift bindings.
-- Android: use native ShazamKit Android integration through the vendor AAR and a Kotlin bridge.
+- iPhone: use native ShazamKit integration through Swift bindings and `SHManagedSession` for the MVP spike shell.
+- Android: use native ShazamKit Android integration through the vendor AAR and a Kotlin bridge, while keeping the repo buildable when the Apple AAR is absent from source control.
 
 ### Data Flow
 
 1. User starts listening in an active session.
-2. Native layer captures audio in the foreground.
-3. ShazamKit returns candidate song matches.
-4. Shared session logic normalizes the result and maps it to the selected Discogs tracklist.
-5. Session engine either auto-advances or asks the user to confirm.
+2. Native shell requests microphone permission and performs a foreground recognition attempt.
+3. iPhone currently uses `SHManagedSession.result()`, while Android currently records a one-shot PCM `AudioRecord` sample and calls `Session.match(signature)` through the Apple Android AAR.
+4. ShazamKit returns ranked candidates: iPhone through `SHSession.Result.mediaItems`, Android through `MatchResult.Match.matchedMediaItems`.
+5. Shared session logic normalizes the result and maps it to the selected Discogs tracklist.
+6. Session engine either auto-advances or asks the user to confirm.
+
+### Current iPhone Spike Notes
+
+- The iPhone shell currently uses a one-shot `SHManagedSession.result()` call to prove end-to-end candidate capture before the shared session engine exists.
+- The observed ranked candidate shape exposes:
+  - `title`
+  - `subtitle`
+  - `artist`
+  - `shazamID`
+  - `appleMusicID`
+  - `artworkURL`
+  - `webURL`
+  - `genres`
+  - `matchOffset`
+  - `predictedCurrentMatchOffset`
+  - `frequencySkew`
+  - `confidence` on iOS `18.4+`
+
+### Current Android Spike Notes
+
+- The Android shell currently uses a one-shot microphone capture path to prove end-to-end candidate handling before the shared session engine exists.
+- The Apple Android SDK is loaded from a local repo-root `libs/shazamkit-android-release.aar`, and the Shazam developer token is supplied through a local `discrobble.shazam.developerToken` Gradle property.
+- The Android spike records PCM `16-bit` mono audio at `48kHz`, creates a Shazam signature, and calls `Session.match(signature)`.
+- The current normalized candidate shape follows the Android `MatchedMediaItem` docs and exposes:
+  - `title`
+  - `subtitle`
+  - `artist`
+  - `genres`
+  - `explicitContent`
+  - `isrc`
+  - `shazamID`
+  - `appleMusicID`
+  - `appleMusicURL`
+  - `webURL`
+  - `matchOffsetInMs`
+  - `predictedCurrentMatchOffset`
+  - `frequencySkew`
+  - `timeRanges`
+  - `frequencySkewRanges`
+- If the Apple AAR or developer token is missing locally, the Android shell surfaces an actionable unavailable state instead of failing the repo build.
 
 ### Fallback Behavior
 

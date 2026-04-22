@@ -6,7 +6,7 @@
 
 - `IntegrationTokenSet` for Last.fm
 - `IntegrationTokenSet` for Discogs
-- short-lived auth-attempt private key material
+- `PendingAuthAttempt` private key material for in-flight browser auth callbacks
 
 ### Local Database
 
@@ -30,6 +30,17 @@
 | `access_secret` | string nullable | Discogs token secret only |
 | `issued_at` | instant | When auth completed |
 | `expires_at` | instant nullable | Null for long-lived provider tokens |
+
+The auth handoff payload currently carries provider-specific keys such as Last.fm `session_key` and Discogs `oauth_token` or `oauth_token_secret`, but the native shells normalize them into this common secure-storage shape.
+
+## `PendingAuthAttempt`
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `provider` | enum | `lastfm` or `discogs` |
+| `private_key_pkcs8` | string | P-256 private key for auth handoff decryption |
+| `public_key_pem` | string | Matching public key sent to the Worker |
+| `created_at` | instant | Used to prune expired auth attempts locally |
 
 ## `DiscogsRelease`
 
@@ -110,14 +121,32 @@
 | `match_id` | uuid | Local primary key |
 | `session_id` | uuid | Parent session |
 | `provider` | enum | `shazamkit` |
+| `platform` | enum | `ios` or `android` |
 | `matched_at` | instant | Match timestamp |
 | `candidate_title` | string | Provider-reported title |
+| `candidate_subtitle` | string nullable | Provider subtitle when available |
 | `candidate_artist` | string | Provider-reported artist |
+| `candidate_provider_id` | string nullable | Shazam ID or equivalent provider identifier |
+| `apple_music_id` | string nullable | Apple Music catalog identifier when available |
+| `isrc` | string nullable | Provider-reported ISRC when available |
+| `explicit_content` | boolean nullable | Provider explicit-content flag when available |
+| `match_offset_ms` | double nullable | Provider-reported reference offset |
+| `predicted_current_match_offset_ms` | double nullable | Provider-reported moving playback offset |
+| `frequency_skew` | double nullable | Provider-reported pitch delta |
+| `platform_confidence` | double nullable | iPhone-only confidence in the current spikes |
+| `genre_values` | string list | Provider genre labels captured in the spike |
+| `time_range_count` | int nullable | Android timed-range count when present |
+| `frequency_skew_range_count` | int nullable | Android skew-range count when present |
 | `normalized_track_index` | int nullable | Resolved Discogs track index |
 | `confidence` | double | Local confidence score |
 | `decision` | enum | `accepted_auto`, `accepted_manual`, `rejected`, `ignored` |
 
 No raw audio is stored in this model.
+
+The current spikes expose slightly different platform fields:
+
+- iPhone currently surfaces `confidence` on iOS `18.4+` and does not expose range counts.
+- Android currently surfaces explicit-content, ISRC, time-range, and frequency-skew-range metadata but has no confidence field in the documented SDK shape.
 
 ## `ScrobbleCandidate`
 
@@ -155,4 +184,3 @@ No raw audio is stored in this model.
 - `DiscogsRelease.fetched_at` is authoritative for cache age.
 - Collection views and new session starts must block when release data is older than six hours.
 - History views may reference locally stored session summaries without querying Discogs again.
-

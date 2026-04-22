@@ -12,32 +12,37 @@ This document owns the current actionable work order for Discrobble. Phase seque
 ## Current Status
 
 - Documentation baseline, architecture, stack, governance rules, and ADRs are already in place.
-- The public GitHub repository now exists under `chaoticware-com`, and baseline repository security settings are enabled.
-- No application code, CI workflows, or deployment configuration has been implemented yet.
-- The immediate focus is Phase 0 repo controls, then Phase 1 integration spikes.
+- Phase 0 repo controls are now in place under `chaoticware-com`, including baseline repository security settings, protected `main`, in-repo review controls, initial GitHub Actions checks, preview/release workflow skeletons, configured GitHub environments, and release provenance scaffolding.
+- The first Worker scaffold now exists under `backend/worker/`.
+- The Gradle root, checked-in wrapper, shared KMP module tree, and native auth shells now exist.
+- The Worker and both native shells now complete the Last.fm auth spike end-to-end, including signed auth start requests, browser handoff, encrypted callback payloads, and secure local session storage.
+- The Worker now also implements the Last.fm `updateNowPlaying` and `track.scrobble` spike endpoints with request signing, normalized error mapping, and local timing-threshold enforcement for scrobbles when timing data is present.
+- The Worker and both native shells now also complete the Discogs auth spike end-to-end, including the browser-opened start route, encrypted request-token cookie handoff, encrypted callback payloads, and secure local token-pair storage.
+- The Worker now also proxies `/discogs/me`, `/discogs/collection`, and `/discogs/search` with OAuth-signed requests, normalized release payloads, and public-response validation against a real collection page and barcode search result.
+- The iPhone shell now also exposes a one-shot ShazamKit spike using `SHManagedSession`, microphone permission handling through `AVAudioApplication`, and a ranked candidate view that confirms the current native match shape.
+- The Android shell now also exposes a one-shot ShazamKit spike wired for Apple's local AAR-based SDK, records PCM `16-bit` mono microphone audio, and normalizes the documented `MatchResult.Match.matchedMediaItems` candidate shape while surfacing an actionable unavailable state when the local SDK or developer token is missing.
+- API contracts, data model, and testing strategy now also reflect the actual spike payloads, normalized error envelopes, and current ShazamKit platform caveats.
+- Phase 1 spike findings are now documented, and the next implementation work is the Phase 2 MVP foundation.
 
 ## Immediate Next Slice
 
-1. Protect `main` and install the required review gates.
-2. Add the first `GitHub Actions` workflows for docs and workflow validation.
-3. Set up preview and production deployment environments.
-4. Start the backend and auth spike scaffolding.
+1. Create the shared module implementations for auth, catalog, session, scrobble, persistence, network, and DI.
 
 ## Phase 0 Backlog: Repo Controls and Transparency
 
 - [x] B0.1 Create the public GitHub repository, push `main`, and enable baseline repository security settings.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Security](../../SECURITY.md)
-- [ ] B0.2 Protect `main` with pull-request-only merges, required status checks, and no direct pushes.
+- [x] B0.2 Protect `main` with pull-request-only merges, required status checks, and no direct pushes.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Contributing](../../CONTRIBUTING.md)
-- [ ] B0.3 Add `.coderabbit.yaml` and `.github/CODEOWNERS` so automated and human review policy becomes enforceable in-repo.
+- [x] B0.3 Add `.coderabbit.yaml` and `.github/CODEOWNERS` so automated and human review policy becomes enforceable in-repo.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-009](../decisions/ADR-009-coderabbit-required-pr-gate.md)
-- [ ] B0.4 Add `ci.yml` with `ci/docs` and `ci/workflows` as the first required checks.
+- [x] B0.4 Add `ci.yml` with `ci/docs` and `ci/workflows` as the first required checks.
   Owner docs: [Testing Strategy](../technical/testing-strategy.md), [CI/CD and Provenance](../technical/ci-cd-and-provenance.md)
-- [ ] B0.5 Add `preview-worker.yml` and `release.yml` skeletons with GitHub environments and tag-triggered production release flow.
+- [x] B0.5 Add `preview-worker.yml` and `release.yml` skeletons with GitHub environments and tag-triggered production release flow.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-010](../decisions/ADR-010-tagged-releases-and-attestations.md)
-- [ ] B0.6 Configure `preview` and `production` GitHub environments, secret boundaries, and required approvals.
+- [x] B0.6 Configure `preview` and `production` GitHub environments, secret boundaries, and required approvals.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [Security](../../SECURITY.md)
-- [ ] B0.7 Add provenance validation for tagged Worker releases and document the public verification path from tag to deploy.
+- [x] B0.7 Add provenance validation for tagged Worker releases and document the public verification path from tag to deploy.
   Owner docs: [CI/CD and Provenance](../technical/ci-cd-and-provenance.md), [ADR-010](../decisions/ADR-010-tagged-releases-and-attestations.md)
 
 ### Phase 0 Gate
@@ -50,33 +55,33 @@ This document owns the current actionable work order for Discrobble. Phase seque
 
 ## Phase 1 Backlog: Integration Spikes
 
-- [ ] B1.1 Scaffold `backend/worker` with `TypeScript`, `Hono`, `Wrangler`, and a minimal health route.
+- [x] B1.1 Scaffold `backend/worker` with `TypeScript`, `Hono`, `Wrangler`, and a minimal health route.
   Owner docs: [Stack](../technical/stack.md), [Repo Layout](../technical/repo-layout.md), [ADR-006](../decisions/ADR-006-cloudflare-workers-hono-backend.md)
-- [ ] B1.2 Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp` without building product features yet.
+- [x] B1.2 Scaffold the KMP root and module layout for `shared`, `iosApp`, and `androidApp` without building product features yet.
   Owner docs: [Architecture](../technical/architecture.md), [Repo Layout](../technical/repo-layout.md), [ADR-002](../decisions/ADR-002-kmp-native-ui.md)
-- [ ] B1.3 Add the minimal iPhone shell needed for deep-link auth callback handoff and secure token storage integration.
+- [x] B1.3 Add the minimal iPhone shell needed for deep-link auth callback handoff and secure token storage integration.
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md)
-- [ ] B1.4 Add the minimal Android shell needed for deep-link auth callback handoff and secure token storage integration.
+- [x] B1.4 Add the minimal Android shell needed for deep-link auth callback handoff and secure token storage integration.
   Owner docs: [Architecture](../technical/architecture.md), [Integrations](../technical/integrations.md), [ADR-007](../decisions/ADR-007-jetpack-compose-android-ui.md)
-- [ ] B1.5 Implement the Last.fm auth start and callback spike through the Worker and both native shells.
+- [x] B1.5 Implement the Last.fm auth start and callback spike through the Worker and both native shells.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
-- [ ] B1.6 Implement the Last.fm `updateNowPlaying` and `track.scrobble` spike through the Worker.
+- [x] B1.6 Implement the Last.fm `updateNowPlaying` and `track.scrobble` spike through the Worker.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
-- [ ] B1.7 Implement the Discogs auth spike on both platforms.
+- [x] B1.7 Implement the Discogs auth spike on both platforms.
   Owner docs: [Integrations](../technical/integrations.md), [API Contracts](../technical/api-contracts.md)
-- [ ] B1.8 Implement Discogs collection fetch and barcode search spikes against real library data.
+- [x] B1.8 Implement Discogs collection fetch and barcode search spikes against real library data.
   Owner docs: [Integrations](../technical/integrations.md), [Testing Strategy](../technical/testing-strategy.md)
-- [ ] B1.9 Implement the iPhone ShazamKit spike and confirm candidate result shape.
+- [x] B1.9 Implement the iPhone ShazamKit spike and confirm candidate result shape.
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)
-- [ ] B1.10 Implement the Android ShazamKit spike and confirm candidate result shape.
+- [x] B1.10 Implement the Android ShazamKit spike and confirm candidate result shape.
   Owner docs: [Integrations](../technical/integrations.md), [User Flows](../product/user-flows.md)
-- [ ] B1.11 Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
+- [x] B1.11 Capture real provider payloads, error shapes, and platform caveats from the spikes and fold them back into the owner docs.
   Owner docs: [API Contracts](../technical/api-contracts.md), [Data Model](../technical/data-model.md), [Testing Strategy](../technical/testing-strategy.md)
 
 ### Phase 1 Gate
 
-- Last.fm auth and signed write calls work end to end.
-- Discogs auth and collection reads work end to end.
+- Last.fm auth and signed write calls work end-to-end.
+- Discogs auth and collection reads work end-to-end.
 - Barcode lookup is validated against real records.
 - ShazamKit produces usable candidate data on both platforms.
 - API contracts and testing docs reflect the real spike findings rather than assumptions.

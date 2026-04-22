@@ -15,12 +15,33 @@
 
 # Kotlin / Gradle
 .gradle/
+.kotlin/
 build/
 out/
+local.properties
+libs/*.aar
 
 # Node / pnpm
 node_modules/
 .pnpm-store/
+.wrangler/
+
+# Apple / Swift
+DerivedData/
+.build/
+.swiftpm/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+
+### Xcode Patch ###
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+/*.gcno
+**/xcshareddata/WorkspaceSettings.xcsettings
 
 # Local databases and caches
 *.db

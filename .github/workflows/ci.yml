@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: ci/docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Validate Markdown coverage and links
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          root = Path(".").resolve()
+          required_docs = [
+              "AGENTS.md",
+              "CONTRIBUTING.md",
+              "README.md",
+              "SECURITY.md",
+              "docs/product/prd.md",
+              "docs/product/user-base.md",
+              "docs/product/user-flows.md",
+              "docs/product/mvp-scope.md",
+              "docs/technical/architecture.md",
+              "docs/technical/ci-cd-and-provenance.md",
+              "docs/technical/integrations.md",
+              "docs/technical/api-contracts.md",
+              "docs/technical/data-model.md",
+              "docs/technical/privacy-security.md",
+              "docs/technical/repo-layout.md",
+              "docs/technical/stack.md",
+              "docs/technical/testing-strategy.md",
+              "docs/delivery/roadmap.md",
+              "docs/delivery/implementation-backlog.md",
+              "docs/decisions/ADR-001-no-server-data.md",
+              "docs/decisions/ADR-002-kmp-native-ui.md",
+              "docs/decisions/ADR-003-assisted-session-flow.md",
+              "docs/decisions/ADR-004-public-github-source-of-truth.md",
+              "docs/decisions/ADR-005-github-actions-exclusive-ci-cd.md",
+              "docs/decisions/ADR-006-cloudflare-workers-hono-backend.md",
+              "docs/decisions/ADR-007-jetpack-compose-android-ui.md",
+              "docs/decisions/ADR-008-room-datastore-persistence.md",
+              "docs/decisions/ADR-009-coderabbit-required-pr-gate.md",
+              "docs/decisions/ADR-010-tagged-releases-and-attestations.md",
+          ]
+
+          link_pattern = re.compile(r"(?<!\!)\[[^\]]+\]\(([^)]+)\)")
+          placeholder_pattern = re.compile(r"\b(?:TODO|TBD)\b")
+          failures = []
+
+          for relative_path in required_docs:
+              if not (root / relative_path).exists():
+                  failures.append(f"Missing required doc: {relative_path}")
+
+          markdown_files = sorted(root.rglob("*.md"))
+          placeholder_files = [root / "README.md", *sorted((root / "docs").rglob("*.md"))]
+
+          for markdown_file in markdown_files:
+              text = markdown_file.read_text(encoding="utf-8")
+
+              for raw_target in link_pattern.findall(text):
+                  target = raw_target.strip().strip("<>")
+
+                  if target.startswith(("http://", "https://", "mailto:")):
+                      continue
+
+                  target = target.split("#", 1)[0]
+                  if not target:
+                      continue
+
+                  resolved = (markdown_file.parent / target).resolve()
+
+                  try:
+                      resolved.relative_to(root)
+                  except ValueError:
+                      failures.append(
+                          f"{markdown_file.relative_to(root)} links outside the repo: {raw_target}"
+                      )
+                      continue
+
+                  if not resolved.exists():
+                      failures.append(
+                          f"{markdown_file.relative_to(root)} has a missing local link: {raw_target}"
+                      )
+
+          for markdown_file in placeholder_files:
+              text = markdown_file.read_text(encoding="utf-8")
+
+              if placeholder_pattern.search(text):
+                  failures.append(f"{markdown_file.relative_to(root)} contains a TODO/TBD placeholder")
+
+          if failures:
+              print("Documentation validation failed:")
+              for failure in failures:
+                  print(f"- {failure}")
+              sys.exit(1)
+
+          print(
+              f"Validated {len(markdown_files)} Markdown files and "
+              f"{len(required_docs)} required documentation paths."
+          )
+          PY
+
+  workflows:
+    name: ci/workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Lint GitHub Actions workflows
+        uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca

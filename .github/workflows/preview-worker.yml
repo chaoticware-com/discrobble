@@ -1,0 +1,32 @@
+name: Preview Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: preview-worker
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    name: preview/worker
+    runs-on: ubuntu-latest
+    environment: preview
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Verify preview deployment prerequisites
+        run: |
+          if [ ! -f backend/worker/wrangler.toml ]; then
+            echo "Preview deployment is intentionally gated until backend/worker is scaffolded."
+            exit 0
+          fi
+
+      - name: Placeholder preview deployment
+        run: |
+          echo "Replace this step with a Wrangler preview deploy once deploy credentials and worker routes are wired."

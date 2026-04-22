@@ -16,14 +16,28 @@ The project should stay in a single public GitHub repository with this top-level
 │   └── workflows/
 ├── androidApp/
 ├── iosApp/
+│   ├── Discrobble.xcodeproj/
+│   └── Discrobble/
 ├── shared/
+│   ├── auth/
+│   ├── catalog/
+│   ├── di/
+│   ├── domain/
+│   ├── network/
+│   ├── persistence/
+│   ├── scrobble/
+│   └── session/
 ├── backend/
 │   └── worker/
 ├── docs/
+├── libs/
 ├── build.gradle.kts
-├── settings.gradle.kts
+├── gradlew
+├── gradlew.bat
 ├── gradle/
-│   └── libs.versions.toml
+│   ├── libs.versions.toml
+│   └── wrapper/
+├── settings.gradle.kts
 ├── package.json
 └── pnpm-workspace.yaml
 ```
@@ -33,6 +47,7 @@ The project should stay in a single public GitHub repository with this top-level
 ### `shared/`
 
 - Kotlin Multiplatform business logic only.
+- Split into `domain`, `auth`, `catalog`, `session`, `scrobble`, `persistence`, `network`, and `di` submodules.
 - Owns domain models, repositories, auth/session rules, persistence abstractions, local database schema, networking clients, and scrobble logic.
 - Does not own platform UI rendering, camera access, microphone access, or direct secret storage implementations.
 
@@ -45,6 +60,8 @@ The project should stay in a single public GitHub repository with this top-level
 ### `iosApp/`
 
 - iPhone application shell implemented with `SwiftUI`.
+- Tracks the checked-in `Discrobble.xcodeproj` entrypoint used to open and run the iPhone shell in `Xcode`.
+- Keeps the app source tree under `iosApp/Discrobble/`, alongside the project metadata bundle.
 - Owns deep links, permission flows, camera integration, ShazamKit bindings, and Keychain-backed secure storage adapter.
 - Consumes shared services and models from `shared/`.
 
@@ -65,10 +82,17 @@ The project should stay in a single public GitHub repository with this top-level
 - Source of truth for product, architecture, delivery, policy, and decisions.
 - Any structural or behavioral change must update this tree in the same change.
 
+### `libs/`
+
+- Holds local-only third-party Android AAR drops that cannot be resolved from public Maven repositories.
+- Currently reserved for the Apple ShazamKit Android SDK at `libs/shazamkit-android-release.aar`.
+- AAR files remain gitignored; only the directory placeholder is tracked.
+
 ## Tooling Boundaries
 
 - Root Kotlin build uses `Gradle Kotlin DSL`.
 - Shared Kotlin dependency versions live in `gradle/libs.versions.toml`.
+- The repository-owned Gradle entrypoint is the checked-in wrapper at `./gradlew`.
 - Root JavaScript workspace uses `pnpm`.
 - Worker-specific dependencies and scripts live under `backend/worker/`.
 - `CodeRabbit` configuration lives at repo root in `.coderabbit.yaml`.
@@ -88,4 +112,3 @@ The project should stay in a single public GitHub repository with this top-level
 - Do not put durable user state into `backend/worker/`.
 - Do not create a second automation system outside `.github/workflows/`.
 - Do not split governance docs away from the repo root.
-

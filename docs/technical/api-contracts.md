@@ -12,17 +12,49 @@
 ### Shared Pattern
 
 1. App generates an ephemeral device key pair for the auth attempt.
-2. App calls a `/auth/.../start` endpoint with:
-   - `callback_url`: universal link or app link that returns to the app
-   - `device_public_key`: PEM or compact JWK string
-   - `platform`: `ios` or `android`
-3. Backend creates a signed state payload and redirects the user to the provider.
+2. App passes `callback_url`, `device_public_key`, and `platform` to a `/auth/.../start` endpoint.
+3. Backend creates a signed state payload and starts the provider auth flow.
 4. Provider redirects to backend callback.
 5. Backend exchanges provider credentials and redirects to `callback_url#payload=...`.
 6. `payload` is encrypted for the device public key and contains the provider token set plus a short expiry.
 7. App decrypts locally and stores the token set in secure storage.
 
 This avoids durable backend storage while keeping provider secrets out of query parameters in plain text.
+
+`callback_url` must currently be either the native `discrobble://auth/{provider}` deep link used by the spike shells or a configured first-party HTTPS callback prefix. Arbitrary HTTPS callback URLs are rejected.
+
+If the backend has already validated the signed state and trusted the `callback_url`, callback failures should redirect back to the app with `#error_code=...&error_message=...` so the native shell can recover without leaving the user stranded in the browser.
+
+### Encrypted Fragment Envelope Shape
+
+The `payload` fragment value is a UTF-8 JSON envelope that the native shell decrypts locally with the pending auth-attempt private key:
+
+```json
+{
+  "alg": "ECDH-P256+HKDF-SHA256+A256GCM",
+  "epk": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
+  "salt": "<base64url>",
+  "iv": "<base64url>",
+  "ciphertext": "<base64url>"
+}
+```
+
+The envelope algorithm and HKDF info string are fixed for the current spikes, and the decrypted payload then matches the provider-specific handoff shapes documented below.
+
+### Standard JSON Error Envelope
+
+Worker JSON failures currently normalize to:
+
+```json
+{
+  "error": {
+    "code": "invalid_payload",
+    "message": "User-safe explanation"
+  }
+}
+```
+
+All JSON responses from the current Worker routes also return `Cache-Control: no-store`.
 
 ## `POST /auth/lastfm/start`
 
@@ -48,7 +80,11 @@ This avoids durable backend storage while keeping provider secrets out of query 
 
 - `400 invalid_callback_url`
 - `400 invalid_device_public_key`
+- `400 invalid_payload`
+- `400 invalid_platform`
 - `500 auth_start_failed`
+
+`auth_start_failed` represents a backend-side bootstrap failure, not a client validation failure, so callers should treat it as potentially retriable after the service configuration or provider path is fixed.
 
 ## `GET /auth/lastfm/callback`
 
@@ -61,7 +97,8 @@ This avoids durable backend storage while keeping provider secrets out of query 
 
 - validate state signature and expiry
 - exchange token for session using Last.fm API secret
-- redirect to app callback URL with encrypted fragment payload
+- redirect to app callback URL with encrypted fragment payload on success
+- redirect to app callback URL with `error_code` and `error_message` fragments when the state is valid but the provider exchange fails
 
 ### Redirect Payload Shape
 
@@ -75,41 +112,52 @@ This avoids durable backend storage while keeping provider secrets out of query 
 }
 ```
 
+`expires_at` above refers to the short-lived handoff payload expiry, not the Last.fm session key lifetime.
+
+### Redirect Error Fragment Shape
+
+```text
+discrobble://auth/lastfm#error_code=provider_exchange_failed&error_message=Discrobble%20could%20not%20exchange%20the%20Last.fm%20auth%20token%20for%20a%20session.
+```
+
 ### Error Cases
 
-- `400 invalid_state`
-- `401 provider_denied`
-- `502 provider_exchange_failed`
+- `400 invalid_state` when the Worker cannot trust the callback state enough to redirect safely
+- `401 provider_denied` redirected to the app as `error_code=provider_denied` once state is valid
+- `502 provider_exchange_failed` redirected to the app as `error_code=provider_exchange_failed` once state is valid
 
-## `POST /auth/discogs/start`
+## `GET /auth/discogs/start`
 
-### Request
+### Query Parameters
 
-```json
-{
-  "callback_url": "discrobble://auth/discogs",
-  "device_public_key": "<public-key>",
-  "platform": "android"
-}
+- `callback_url`
+- `device_public_key`
+- `platform`
+
+Example:
+
+```text
+/auth/discogs/start?callback_url=discrobble%3A%2F%2Fauth%2Fdiscogs&device_public_key=...&platform=android
 ```
 
-### Response
-
-```json
-{
-  "authorize_url": "https://www.discogs.com/oauth/authorize?oauth_token=..."
-}
-```
+`platform` currently accepts only `ios` or `android`.
 
 ### Backend Notes
 
+- Endpoint must be opened in the browser, not fetched first as JSON, so the short-lived encrypted request-token cookie is set in the same browser context that returns on callback.
 - Backend stores the temporary Discogs request-token secret in an encrypted, HTTP-only cookie with a fifteen-minute TTL.
 - No server-side database row is created for the auth flow.
+
+### Response
+
+- `302` redirect to `https://www.discogs.com/oauth/authorize?oauth_token=...`
+- `Set-Cookie` with the encrypted temporary request-token secret
 
 ### Error Cases
 
 - `400 invalid_callback_url`
 - `400 invalid_device_public_key`
+- `400 invalid_platform`
 - `502 request_token_failed`
 
 ## `GET /auth/discogs/callback`
@@ -118,13 +166,16 @@ This avoids durable backend storage while keeping provider secrets out of query 
 
 - `oauth_token`
 - `oauth_verifier`
+- signed state in query string
 - encrypted auth context cookie
 
 ### Backend Behavior
 
+- validate signed state and expiry
 - restore temporary request-token secret from cookie
 - exchange for Discogs access token and secret
-- redirect to app callback URL with encrypted fragment payload
+- redirect to app callback URL with encrypted fragment payload on success
+- redirect to app callback URL with `error_code` and `error_message` fragments when the state is valid but the browser auth context or access-token exchange fails
 
 ### Redirect Payload Shape
 
@@ -141,9 +192,10 @@ This avoids durable backend storage while keeping provider secrets out of query 
 
 ### Error Cases
 
-- `400 invalid_auth_context`
-- `401 provider_denied`
-- `502 access_token_failed`
+- `400 invalid_state` when the Worker cannot trust the callback state enough to redirect safely
+- `400 invalid_auth_context` redirected to the app as `error_code=invalid_auth_context` once state is valid
+- `401 provider_denied` redirected to the app as `error_code=provider_denied` once state is valid
+- `502 access_token_failed` redirected to the app as `error_code=access_token_failed` once state is valid
 
 ## `GET /discogs/me`
 
@@ -174,9 +226,8 @@ This avoids durable backend storage while keeping provider secrets out of query 
 ### Query Parameters
 
 - `page`: integer, required
-- `per_page`: integer, default `50`, max `100`
+- `per_page`: integer, default `10`, max `25`
 - `folder_id`: integer, default `0`
-- `query`: optional search text applied server-side when supported
 
 ### Request Headers
 
@@ -188,7 +239,7 @@ This avoids durable backend storage while keeping provider secrets out of query 
 ```json
 {
   "page": 1,
-  "per_page": 50,
+  "per_page": 10,
   "pages": 10,
   "items": [
     {
@@ -212,6 +263,14 @@ This avoids durable backend storage while keeping provider secrets out of query 
   ]
 }
 ```
+
+Current normalization details from the spike:
+
+- `artist` is the joined `basic_information.artists[].name` string.
+- `formats` merges both the Discogs format `name` values and each `descriptions[]` value.
+- `tracklist` comes from a follow-up `/releases/{id}` fetch per item, and each track currently keeps only `position`, `title`, and nullable `duration`.
+- Because the spike still enriches each collection row with a follow-up release request, collection pages are currently capped at `25` items to keep upstream fan-out bounded.
+- `cover_image`, `instance_id`, `year`, and `duration` are nullable when Discogs omits them.
 
 ### Error Cases
 
@@ -254,10 +313,19 @@ At least one of `query` or `barcode` is required.
 }
 ```
 
+`match_reason` is `barcode` when the request was barcode-driven and `query` when the request used free-text search input.
+
+Current normalization details from the spike:
+
+- Discogs `title` values shaped like `Artist - Release` are split locally into `artist` and `title`.
+- Only Discogs results with `type=release` and a numeric `id` survive normalization.
+- `barcode_values` is copied from the provider result array as-is, with no extra local parsing.
+
 ### Error Cases
 
 - `400 missing_search_input`
 - `401 missing_discogs_credentials`
+- `401 discogs_auth_invalid`
 - `429 discogs_rate_limited`
 - `502 discogs_unavailable`
 
@@ -291,6 +359,8 @@ At least one of `query` or `barcode` is required.
 }
 ```
 
+`ignored` is currently derived from Last.fm's `<ignoredmessage code="...">` value and becomes `true` when that code is non-zero.
+
 ### Error Cases
 
 - `400 invalid_payload`
@@ -299,6 +369,12 @@ At least one of `query` or `barcode` is required.
 - `502 lastfm_unavailable`
 
 Requests to this endpoint are not retried automatically by the client.
+
+Current provider error mapping:
+
+- Last.fm codes `4` and `9` normalize to `lastfm_session_invalid`.
+- Last.fm codes `2`, `3`, `8`, `10`, and `11` normalize to `lastfm_unavailable`.
+- Other structured Last.fm errors normalize to `invalid_payload`.
 
 ## `POST /lastfm/scrobble`
 
@@ -352,10 +428,11 @@ Requests to this endpoint are not retried automatically by the client.
   - malformed timestamp
   - filtered metadata that Last.fm accepts but ignores
 
+Current provider error mapping for successful HTTP responses matches `POST /lastfm/now-playing`.
+
 ## Auth State Rules
 
 - Auth start state expires after fifteen minutes.
 - App handoff payload expires after one minute.
 - Expired payloads are discarded locally and require the user to restart auth.
 - Backend must redact provider tokens from logs and traces.
-

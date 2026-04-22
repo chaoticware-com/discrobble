@@ -25,8 +25,11 @@
 | T12 | F7 | U1, U8 | Inspect backend behavior during normal use | No durable user data is written server-side |
 | T13 | Repo policy | N/A | Open a pull request that lacks required checks or CodeRabbit status | Merge remains blocked by branch protection policy |
 | T14 | Workflow policy | N/A | Change a workflow file with invalid syntax or unsafe structure | Workflow lint fails before merge |
-| T15 | Release policy | N/A | Create a version tag and run the production release workflow | Release artifacts, deployment record, and production deploy are all linked to the tag and workflow run |
-| T16 | Provenance policy | N/A | Inspect a production release from the public repository | Commit SHA, tag, workflow run, deployment metadata, and attestation are all visible and consistent |
+| T15 | Release policy | N/A | Create a version tag and run the tagged release workflow | Release metadata, a deployable Worker bundle, and their attestations all link back to the tag and workflow run; the Worker deploy runs only when the protected production deploy gate is enabled |
+| T16 | Provenance policy | N/A | Inspect a tagged release from the public repository | Commit SHA, tag, workflow run, release metadata, and the attested Worker bundle are visible and consistent; deployment metadata joins the chain once the production deploy gate is enabled |
+| T17 | F4 | U5 | iPhone one-shot ShazamKit spike returns ranked media-item metadata | Title, artist, IDs, offsets, skew, and optional confidence are visible in the shell |
+| T18 | F4 | U5 | Android build without local ShazamKit AAR or developer token | App still assembles and the shell surfaces an actionable unavailable state |
+| T19 | F4 | U5 | Android one-shot ShazamKit spike with local AAR and developer token | `MatchResult.Match.matchedMediaItems` fields are surfaced in the shell |
 
 ## Test Layers
 
@@ -41,6 +44,7 @@
 ### Backend Contract Tests
 
 - auth start response shape
+- encrypted auth fragment envelope shape
 - callback state validation
 - Last.fm request signing
 - Discogs proxy header validation
@@ -60,7 +64,9 @@
 - microphone permission denial and recovery
 - camera permission denial and recovery
 - barcode scanner invocation
-- ShazamKit bridge smoke tests
+- iPhone `SHManagedSession` one-shot bridge smoke test
+- Android `Session.match(signature)` smoke test with local Apple AAR and developer token
+- Android fallback path when the local Apple AAR or developer token is absent
 
 ### Workflow and Governance Checks
 
@@ -71,25 +77,27 @@
 
 ## GitHub Actions Lanes
 
+Phase 0 wires up `ci/docs` and `ci/workflows` first. The remaining lanes come online as the corresponding mobile and backend scaffolding lands.
+
 - `ci/docs`
-  - markdown link checks, stale-doc checks, and required-doc coverage
+  - Markdown link checks, stale-doc checks, and required-doc coverage
 - `ci/shared`
   - shared Kotlin compile, unit tests, and persistence tests
 - `ci/android`
-  - Android build, Compose UI tests, and Android-specific integration checks
+  - Android build, Compose UI tests, and Android-specific integration checks that do not require the local Apple ShazamKit AAR
 - `ci/ios`
-  - iOS build and smoke tests for native bridges and deep links
+  - iOS build plus unit and smoke tests for native bridges and deep links
 - `ci/worker`
   - Worker lint, unit tests, Hono route tests, and Wrangler config validation
 - `ci/workflows`
   - workflow linting and policy checks
 - `release/provenance`
-  - tag-based artifact generation, artifact attestation, and deployment metadata verification
+  - tag-based artifact generation, main-commit validation, Worker bundle attestation, and deployment metadata verification once production deploy is enabled
 
 ## Platform Coverage
 
 - iPhone on a modern iOS version with ShazamKit enabled
-- Android device with ShazamKit Android integration working
+- Android device with the local Apple ShazamKit AAR and developer token configured
 - public GitHub Actions runners for shared, worker, and workflow validation
 - macOS GitHub Actions runners for iOS builds
 - both platforms tested for:
@@ -97,6 +105,12 @@
   - auth cancellation
   - app restart during queued retries
   - stale Discogs cache refresh blocking
+
+## Current Spike Caveats
+
+- The repo now compiles and assembles Android without committing the Apple ShazamKit AAR, so CI can validate the fallback shell and the build plumbing but not real Android recognition.
+- Real Android recognition validation remains a maintainer-local smoke test until the project adopts a compliant way to provision the Apple SDK and developer token in automation.
+- iPhone ShazamKit smoke validation can run in the repo without extra vendor binaries, but confidence values remain version-dependent because they appear only on iOS `18.4+`.
 
 ## Failure-Path Checklist
 
@@ -112,6 +126,7 @@
 - app terminated with queued scrobbles pending
 - workflow change breaks required checks
 - release tag missing provenance metadata
+- release tag missing the attested Worker bundle artifact
 - attempted production deploy outside GitHub Actions policy
 
 ## Exit Criteria Before Coding Beyond Spikes
@@ -122,4 +137,4 @@
 - Recognition can produce a usable candidate that maps onto a selected Discogs tracklist.
 - Queue replay behavior is deterministic under offline and transient Last.fm failures.
 - The required GitHub Actions lanes are documented and runnable.
-- Tagged releases can be traced through workflow run, deployment record, and provenance metadata.
+- Tagged releases can be traced through workflow run, metadata, and the attested Worker bundle, with the deployment record joining once production deploy is enabled.
