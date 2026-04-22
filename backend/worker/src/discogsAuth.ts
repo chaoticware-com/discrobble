@@ -9,7 +9,9 @@ import {
   decodeBase64Url,
   encryptPayload,
   encodeBase64Url,
+  fetchWithTimeout,
   importDevicePublicKey,
+  isAbortError,
   requireBinding,
   resolveAllowedHttpsCallbackPrefixes,
   resolveSeconds,
@@ -26,6 +28,7 @@ const DISCOGS_REQUEST_TOKEN_URL = 'https://api.discogs.com/oauth/request_token'
 const AUTH_CONTEXT_COOKIE_NAME = 'discrobble_discogs_auth'
 const COOKIE_KEY_INFO = new TextEncoder().encode('discrobble-discogs-auth-cookie:v1')
 const COOKIE_KEY_SALT = new TextEncoder().encode('discrobble-discogs-auth-cookie-salt:v1')
+const DISCOGS_FETCH_TIMEOUT_MS = 10_000
 
 type DiscogsSignedAuthState = SignedAuthState<'discogs'>
 
@@ -59,6 +62,8 @@ class CallbackRedirectError extends Error {
     message: string,
   ) {
     super(message)
+    this.name = 'CallbackRedirectError'
+    Object.setPrototypeOf(this, CallbackRedirectError.prototype)
   }
 }
 
@@ -361,13 +366,31 @@ async function exchangeDiscogsAccessToken(input: {
     tokenSecret: input.oauthTokenSecret,
     url: DISCOGS_ACCESS_TOKEN_URL,
   })
-  const response = await fetch(DISCOGS_ACCESS_TOKEN_URL, {
-    headers: {
-      Authorization: authorization,
-      'User-Agent': DISCOGS_USER_AGENT,
-    },
-    method: 'POST',
-  })
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      DISCOGS_ACCESS_TOKEN_URL,
+      {
+        headers: {
+          Authorization: authorization,
+          'User-Agent': DISCOGS_USER_AGENT,
+        },
+        method: 'POST',
+      },
+      DISCOGS_FETCH_TIMEOUT_MS,
+    )
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new CallbackRedirectError(
+        'access_token_failed',
+        'Discogs took too long to return an access token. Retry the browser approval flow.',
+      )
+    }
+
+    throw error
+  }
+
   const responseText = await response.text()
   const parsed = parseDiscogsTokenResponse(responseText)
 
@@ -474,13 +497,28 @@ async function requestDiscogsRequestToken(input: {
     method: 'POST',
     url: DISCOGS_REQUEST_TOKEN_URL,
   })
-  const response = await fetch(DISCOGS_REQUEST_TOKEN_URL, {
-    headers: {
-      Authorization: authorization,
-      'User-Agent': DISCOGS_USER_AGENT,
-    },
-    method: 'POST',
-  })
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      DISCOGS_REQUEST_TOKEN_URL,
+      {
+        headers: {
+          Authorization: authorization,
+          'User-Agent': DISCOGS_USER_AGENT,
+        },
+        method: 'POST',
+      },
+      DISCOGS_FETCH_TIMEOUT_MS,
+    )
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error('Discogs took too long to issue a request token.')
+    }
+
+    throw error
+  }
+
   const responseText = await response.text()
   const parsed = parseDiscogsTokenResponse(responseText)
 

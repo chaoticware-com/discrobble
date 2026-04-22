@@ -110,9 +110,7 @@ export async function verifyState<TState extends SignedAuthState>(
     throw new Error('The auth state signature is invalid.')
   }
 
-  const payload = JSON.parse(
-    new TextDecoder().decode(decodeBase64Url(payloadSegment)),
-  ) as TState
+  const payload = parseSignedAuthStatePayload<TState>(payloadSegment)
 
   if (payload.provider !== provider) {
     throw new Error('The auth state targets an unsupported provider.')
@@ -213,6 +211,28 @@ export function resolveSeconds(
 
 export function asErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'An unexpected error occurred.'
+}
+
+export async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeoutHandle)
+  }
+}
+
+export function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
 }
 
 export function encodeBase64Url(bytes: Uint8Array): string {
@@ -349,6 +369,30 @@ function providerLabel(provider: SignedAuthState['provider']): string {
   return provider === 'lastfm' ? 'Last.fm' : 'Discogs'
 }
 
+function parseSignedAuthStatePayload<TState extends SignedAuthState>(
+  payloadSegment: string,
+): TState {
+  const payload = JSON.parse(
+    new TextDecoder().decode(decodeBase64Url(payloadSegment)),
+  ) as unknown
+
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('The auth state payload is malformed.')
+  }
+
+  const candidate = payload as Partial<SignedAuthState>
+
+  if (typeof candidate.provider !== 'string' || typeof candidate.expires_at !== 'string') {
+    throw new Error('The auth state payload is missing required fields.')
+  }
+
+  if (Number.isNaN(Date.parse(candidate.expires_at))) {
+    throw new Error('The auth state payload has an invalid expiry timestamp.')
+  }
+
+  return payload as TState
+}
+
 async function signStatePayload(
   payloadSegment: string,
   secret: string,
@@ -373,15 +417,15 @@ async function signStatePayload(
 }
 
 function timingSafeEqual(left: string, right: string): boolean {
-  if (left.length !== right.length) {
-    return false
-  }
-
   let difference = 0
+  const maxLength = Math.max(left.length, right.length)
 
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
+  for (let index = 0; index < maxLength; index += 1) {
+    const leftCode = index < left.length ? left.charCodeAt(index) : 0
+    const rightCode = index < right.length ? right.charCodeAt(index) : 0
+    difference |= leftCode ^ rightCode
   }
 
+  difference |= left.length ^ right.length
   return difference === 0
 }

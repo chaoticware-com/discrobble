@@ -7,7 +7,9 @@ import {
   asErrorMessage,
   buildAppCallback,
   encryptPayload,
+  fetchWithTimeout,
   importDevicePublicKey,
+  isAbortError,
   requireBinding,
   resolveAllowedHttpsCallbackPrefixes,
   resolveSeconds,
@@ -19,6 +21,7 @@ import { signLastfmParams } from './lastfmSigning'
 
 const LASTFM_API_URL = 'https://ws.audioscrobbler.com/2.0/'
 const LASTFM_AUTHORIZE_URL = 'https://www.last.fm/api/auth/'
+const LASTFM_FETCH_TIMEOUT_MS = 10_000
 
 type LastfmSignedAuthState = SignedAuthState<'lastfm'>
 
@@ -45,6 +48,8 @@ class CallbackRedirectError extends Error {
     message: string,
   ) {
     super(message)
+    this.name = 'CallbackRedirectError'
+    Object.setPrototypeOf(this, CallbackRedirectError.prototype)
   }
 }
 
@@ -212,13 +217,30 @@ async function exchangeLastfmSession(input: {
     method: 'auth.getSession',
     token: input.token,
   })
-  const response = await fetch(LASTFM_API_URL, {
-    body: params.toString(),
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    method: 'POST',
-  })
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      LASTFM_API_URL,
+      {
+        body: params.toString(),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        method: 'POST',
+      },
+      LASTFM_FETCH_TIMEOUT_MS,
+    )
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new CallbackRedirectError(
+        'provider_exchange_failed',
+        'Last.fm took too long to return a session. Retry the browser approval flow.',
+      )
+    }
+
+    throw error
+  }
 
   if (!response.ok) {
     throw new CallbackRedirectError(
