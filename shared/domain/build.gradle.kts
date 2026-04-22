@@ -11,8 +11,6 @@ kotlin {
     jvmToolchain(17)
 
     sourceSets {
-        commonMain.dependencies {
-        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }

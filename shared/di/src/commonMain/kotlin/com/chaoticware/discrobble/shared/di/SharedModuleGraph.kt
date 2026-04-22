@@ -18,4 +18,16 @@ object SharedModuleGraph {
         PersistenceModule.id,
         NetworkModule.id,
     )
+
+    init {
+        val duplicateModuleIds = moduleIds
+            .groupingBy { it }
+            .eachCount()
+            .filterValues { it > 1 }
+            .keys
+
+        check(duplicateModuleIds.isEmpty()) {
+            "Shared module IDs must be unique. Duplicates: ${duplicateModuleIds.joinToString()}"
+        }
+    }
 }
