@@ -97,6 +97,7 @@ final class KeychainPendingAuthAttemptStore: PendingAuthAttemptStoring {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: "pending-auth.\(provider.rawValue)",
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecAttrService as String: Constants.service,
         ]
     }

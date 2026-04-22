@@ -97,11 +97,6 @@ final class ShazamRecognitionCoordinator: ObservableObject {
         permissionStatus = Self.currentPermissionStatus()
     }
 
-    deinit {
-        recognitionTask?.cancel()
-        cancelActiveSession?()
-    }
-
     func clearLastMatch() {
         lastMatch = nil
         lastNoMatchAt = nil
