@@ -55,7 +55,7 @@ struct AuthCallbackParser {
         var fragmentComponents = URLComponents()
         fragmentComponents.scheme = "discrobble"
         fragmentComponents.host = "fragment"
-        fragmentComponents.query = fragment
+        fragmentComponents.percentEncodedQuery = fragment
 
         return Dictionary(
             fragmentComponents
