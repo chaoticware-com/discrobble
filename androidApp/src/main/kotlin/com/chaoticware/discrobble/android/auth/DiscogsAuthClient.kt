@@ -47,52 +47,55 @@ class DiscogsAuthClient(
             ?: throw IllegalStateException(
                 "No pending Discogs auth attempt was available to decrypt the callback.",
             )
-        val envelope = JSONObject(callback.encryptedPayload)
 
-        require(envelope.optString("alg") == ENVELOPE_ALGORITHM) {
-            "The Discogs auth callback used an unsupported encryption envelope."
+        try {
+            val envelope = JSONObject(callback.encryptedPayload)
+
+            require(envelope.optString("alg") == ENVELOPE_ALGORITHM) {
+                "The Discogs auth callback used an unsupported encryption envelope."
+            }
+
+            val privateKeyBytes = Base64.decode(attempt.privateKeyPkcs8, Base64.NO_WRAP)
+            val privateKey = KeyFactory.getInstance("EC")
+                .generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
+            val publicKey = decodeEcPublicKey(envelope.getString("epk"))
+            val sharedSecret = deriveSharedSecret(privateKey, publicKey)
+            val salt = decodeBase64Url(envelope.getString("salt"))
+            val iv = decodeBase64Url(envelope.getString("iv"))
+            val ciphertext = decodeBase64Url(envelope.getString("ciphertext"))
+            val aesKey = hkdfSha256(
+                inputKeyMaterial = sharedSecret,
+                salt = salt,
+                info = HANDOFF_INFO.toByteArray(),
+                outputLength = 32,
+            )
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+
+            cipher.init(
+                Cipher.DECRYPT_MODE,
+                SecretKeySpec(aesKey, "AES"),
+                GCMParameterSpec(128, iv),
+            )
+
+            val decryptedPayload = cipher.doFinal(ciphertext)
+            val payload = JSONObject(String(decryptedPayload, StandardCharsets.UTF_8))
+            val expiresAt = Instant.parse(payload.getString("expires_at"))
+
+            require(expiresAt.isAfter(Instant.now())) {
+                "The Discogs auth callback expired before the app could decrypt it. Restart the auth flow."
+            }
+
+            return StoredIntegrationTokenSet(
+                provider = AuthProvider.DISCOGS,
+                username = payload.getString("username"),
+                accessToken = payload.getString("oauth_token"),
+                accessSecret = payload.getString("oauth_token_secret"),
+                issuedAt = payload.getString("issued_at"),
+                expiresAt = null,
+            )
+        } finally {
+            attemptStore.removeAttempt(AuthProvider.DISCOGS)
         }
-
-        val privateKeyBytes = Base64.decode(attempt.privateKeyPkcs8, Base64.NO_WRAP)
-        val privateKey = KeyFactory.getInstance("EC")
-            .generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
-        val publicKey = decodeEcPublicKey(envelope.getString("epk"))
-        val sharedSecret = deriveSharedSecret(privateKey, publicKey)
-        val salt = decodeBase64Url(envelope.getString("salt"))
-        val iv = decodeBase64Url(envelope.getString("iv"))
-        val ciphertext = decodeBase64Url(envelope.getString("ciphertext"))
-        val aesKey = hkdfSha256(
-            inputKeyMaterial = sharedSecret,
-            salt = salt,
-            info = HANDOFF_INFO.toByteArray(),
-            outputLength = 32,
-        )
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-
-        cipher.init(
-            Cipher.DECRYPT_MODE,
-            SecretKeySpec(aesKey, "AES"),
-            GCMParameterSpec(128, iv),
-        )
-
-        val decryptedPayload = cipher.doFinal(ciphertext)
-        val payload = JSONObject(String(decryptedPayload, StandardCharsets.UTF_8))
-        val expiresAt = Instant.parse(payload.getString("expires_at"))
-
-        require(expiresAt.isAfter(Instant.now())) {
-            "The Discogs auth callback expired before the app could decrypt it. Restart the auth flow."
-        }
-
-        attemptStore.removeAttempt(AuthProvider.DISCOGS)
-
-        return StoredIntegrationTokenSet(
-            provider = AuthProvider.DISCOGS,
-            username = payload.getString("username"),
-            accessToken = payload.getString("oauth_token"),
-            accessSecret = payload.getString("oauth_token_secret"),
-            issuedAt = payload.getString("issued_at"),
-            expiresAt = null,
-        )
     }
 
     fun clearAttempt(provider: AuthProvider) {

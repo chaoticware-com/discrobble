@@ -23,7 +23,11 @@ Discrobble's product promise is that it does not build a personal cloud history 
 - Never commit provider keys or secrets to the client bundle.
 - Encrypt auth handoff payloads to the device public key created for that auth attempt.
 - Use HTTPS for every app-to-backend and backend-to-provider call outside local developer loopback flows.
-- Allow loopback HTTP only in debug-only local development against a developer-run Worker on `localhost`, `127.0.0.1`, or `::1`; never allow that exception in CI, staging, or production builds.
+- Allow loopback HTTP only in debug-only local development against a developer-run Worker on `localhost`, `127.0.0.1`, `::1`, or Android emulator host alias `10.0.2.2`; never allow that exception in CI, staging, or production builds.
+- Enforce that exception in code:
+  - Android debug hardcodes the local Worker URL, while Android release builds fail task execution unless `DISCROBBLE_WORKER_BASE_URL` or `discrobble.workerBaseUrl` resolves to a non-loopback absolute `https` URL.
+  - iPhone debug falls back to `http://127.0.0.1:8787`, while non-Debug Xcode builds fail if `DISCROBBLE_WORKER_BASE_URL` is blank, loopback, or non-`https`.
+  - CI, beta, and production workflows must inject a non-loopback `https` Worker base URL when they build native release artifacts.
 - Redact provider tokens, barcode values, and raw payload bodies from backend logs.
 - Disable analytics SDKs in MVP unless they are proven necessary and privacy-compatible.
 

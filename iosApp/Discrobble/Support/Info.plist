@@ -33,15 +33,15 @@
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Discrobble uses the microphone to identify the currently playing track with ShazamKit during an active listening session.</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Discrobble uses the microphone to identify the currently playing track with ShazamKit during an active listening session.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
     <key>UILaunchScreen</key>
     <dict/>
 </dict>

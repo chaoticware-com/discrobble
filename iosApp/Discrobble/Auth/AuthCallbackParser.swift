@@ -11,11 +11,14 @@ struct AuthCallbackParser {
 
         if let errorCode = fragment["error_code"], !errorCode.isEmpty {
             let errorMessage = fragment["error_message"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let resolvedErrorMessage =
+                (errorMessage?.isEmpty == false ? errorMessage : nil)
+                ?? "The provider auth flow did not complete successfully."
             return .failure(
                 AuthCallbackFailure(
                     provider: provider,
                     code: errorCode,
-                    message: errorMessage ?? "The provider auth flow did not complete successfully."
+                    message: resolvedErrorMessage
                 )
             )
         }

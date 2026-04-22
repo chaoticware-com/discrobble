@@ -2,6 +2,7 @@ import CryptoKit
 import Foundation
 
 struct LastfmAuthCoordinator {
+    private static let allowedAuthorizeHosts = Set(["last.fm", "www.last.fm"])
     private static let callbackURL = "discrobble://auth/lastfm"
     private static let handoffInfo = Data("discrobble-auth-handoff:v1".utf8)
 
@@ -51,7 +52,7 @@ struct LastfmAuthCoordinator {
             }
 
             let payload = try decoder.decode(LastfmAuthStartResponse.self, from: data)
-            return payload.authorizeURL
+            return try validateAuthorizeURL(payload.authorizeURL)
         } catch {
             try? attemptStore.removeAttempt(for: .lastfm)
             throw error
@@ -132,6 +133,19 @@ struct LastfmAuthCoordinator {
 
         return httpResponse
     }
+
+    private func validateAuthorizeURL(_ url: URL) throws -> URL {
+        guard
+            url.scheme?.lowercased() == "https",
+            let host = url.host?.lowercased(),
+            Self.allowedAuthorizeHosts.contains(host),
+            url.path.lowercased().hasPrefix("/api/auth")
+        else {
+            throw LastfmAuthCoordinatorError.invalidAuthorizeURL
+        }
+
+        return url
+    }
 }
 
 private struct LastfmAuthStartRequest: Encodable {
@@ -208,6 +222,7 @@ private struct LastfmAuthPayload: Decodable {
 
 private enum LastfmAuthCoordinatorError: LocalizedError {
     case expiredPayload
+    case invalidAuthorizeURL
     case invalidCiphertext
     case missingPendingAttempt
     case unexpectedWorkerResponse
@@ -219,6 +234,8 @@ private enum LastfmAuthCoordinatorError: LocalizedError {
         switch self {
         case .expiredPayload:
             return "The Last.fm auth callback expired before the app could decrypt it. Restart the auth flow."
+        case .invalidAuthorizeURL:
+            return "The Worker returned an unexpected Last.fm authorize URL."
         case .invalidCiphertext:
             return "The Last.fm auth callback contained an invalid encrypted payload."
         case .missingPendingAttempt:

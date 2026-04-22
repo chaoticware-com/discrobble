@@ -1,4 +1,6 @@
+import java.net.URI
 import java.util.Properties
+import org.gradle.api.GradleException
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,6 +9,27 @@ plugins {
 }
 
 fun String.escapeForBuildConfig(): String = replace("\\", "\\\\").replace("\"", "\\\"")
+
+fun isLocalDevWorkerHost(host: String): Boolean {
+    return host.equals("localhost", ignoreCase = true) ||
+        host == "127.0.0.1" ||
+        host == "::1" ||
+        host == "10.0.2.2"
+}
+
+fun isValidReleaseWorkerBaseUrl(rawValue: String): Boolean {
+    val trimmed = rawValue.trim()
+
+    if (trimmed.isEmpty()) {
+        return false
+    }
+
+    val uri = runCatching { URI(trimmed) }.getOrNull() ?: return false
+    val scheme = uri.scheme?.lowercase() ?: return false
+    val host = uri.host ?: return false
+
+    return scheme == "https" && !isLocalDevWorkerHost(host)
+}
 
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
@@ -20,6 +43,13 @@ val shazamKitAarFile = rootProject.file("libs/$shazamKitAarName.aar")
 val shazamDeveloperToken = providers.gradleProperty("discrobble.shazam.developerToken")
     .orElse(localProperties.getProperty("discrobble.shazam.developerToken") ?: "")
     .get()
+val releaseWorkerBaseUrl = providers.gradleProperty("discrobble.workerBaseUrl")
+    .orElse(providers.environmentVariable("DISCROBBLE_WORKER_BASE_URL"))
+    .orElse(localProperties.getProperty("discrobble.workerBaseUrl") ?: "")
+    .get()
+val requestedReleaseBuild = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("Release", ignoreCase = true)
+}
 
 android {
     namespace = "com.chaoticware.discrobble.android"
@@ -54,7 +84,11 @@ android {
         }
 
         release {
-            buildConfigField("String", "DISCROBBLE_WORKER_BASE_URL", "\"https://worker.discrobble.invalid\"")
+            buildConfigField(
+                "String",
+                "DISCROBBLE_WORKER_BASE_URL",
+                "\"${releaseWorkerBaseUrl.escapeForBuildConfig()}\"",
+            )
             isMinifyEnabled = false
         }
     }
@@ -97,4 +131,11 @@ dependencies {
             ),
         )
     }
+}
+
+if (requestedReleaseBuild && !isValidReleaseWorkerBaseUrl(releaseWorkerBaseUrl)) {
+    throw GradleException(
+        "Android release builds require DISCROBBLE_WORKER_BASE_URL or discrobble.workerBaseUrl " +
+            "to be set to a non-loopback absolute https URL.",
+    )
 }

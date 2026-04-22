@@ -18,8 +18,19 @@ class AuthCallbackParser {
                 "The callback URL must target discrobble://auth/lastfm or discrobble://auth/discogs."
             )
 
-        val fragment = uri.fragment.orEmpty()
-        val fragmentUri = Uri.parse("discrobble://fragment?$fragment")
+        val encodedFragment = uri.encodedFragment.orEmpty()
+
+        if (encodedFragment.isNotEmpty() && !encodedFragment.contains('=')) {
+            return invalidCallbackFailure(
+                provider = provider,
+                message = "The callback URL fragment was not encoded as expected.",
+            )
+        }
+
+        // The Worker encodes callback fragments as query-string pairs such as
+        // #payload=... or #error_code=...&error_message=..., so re-parse the
+        // encoded fragment as a synthetic query URI before reading keys.
+        val fragmentUri = Uri.parse("discrobble://fragment?$encodedFragment")
         val errorCode = fragmentUri.getQueryParameter("error_code")?.trim().orEmpty()
 
         if (errorCode.isNotEmpty()) {
@@ -41,15 +52,31 @@ class AuthCallbackParser {
             ?.trim()
             .orEmpty()
 
-        require(payload.isNotEmpty()) {
-            "The callback URL is missing the encrypted payload fragment."
+        if (payload.isEmpty()) {
+            return invalidCallbackFailure(
+                provider = provider,
+                message = "The callback URL is missing the encrypted payload fragment.",
+            )
         }
 
         return AuthCallbackResult.Payload(
             callback = PendingAuthCallback(
                 provider = provider,
                 encryptedPayload = payload,
-                receivedAtMillis = System.currentTimeMillis(),
+                receivedAtEpochMillis = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    private fun invalidCallbackFailure(
+        provider: AuthProvider,
+        message: String,
+    ): AuthCallbackResult {
+        return AuthCallbackResult.Failure(
+            failure = AuthCallbackFailure(
+                provider = provider,
+                code = "invalid_callback",
+                message = message,
             ),
         )
     }

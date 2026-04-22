@@ -65,15 +65,24 @@ class AndroidKeystoreTokenStore(
     private fun JSONObject.toStoredIntegrationTokenSet(): StoredIntegrationTokenSet {
         val provider = AuthProvider.fromRawValue(optString("provider"))
             ?: throw IllegalStateException("Stored token payload is missing a valid provider value.")
+        val username = requiredString("username")
+        val accessToken = requiredString("access_token")
+        val issuedAt = requiredString("issued_at")
 
         return StoredIntegrationTokenSet(
             provider = provider,
-            username = optString("username"),
-            accessToken = optString("access_token"),
+            username = username,
+            accessToken = accessToken,
             accessSecret = optString("access_secret").takeUnless { it.isEmpty() || it == "null" },
-            issuedAt = optString("issued_at"),
+            issuedAt = issuedAt,
             expiresAt = optString("expires_at").takeUnless { it.isEmpty() || it == "null" },
         )
+    }
+
+    private fun JSONObject.requiredString(key: String): String {
+        return optString(key)
+            .takeUnless { it.isBlank() || it == "null" }
+            ?: throw IllegalStateException("Stored token payload is missing a valid $key value.")
     }
 
     private companion object {

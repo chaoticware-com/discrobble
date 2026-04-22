@@ -49,6 +49,27 @@ final class AuthCallbackParserTests: XCTestCase {
         XCTAssertEqual(callback.encryptedPayload, "fresh")
     }
 
+    func testParseFailureCallbackFallsBackWhenErrorMessageTrimsEmpty() throws {
+        let result = try parser.parse(
+            url: try XCTUnwrap(
+                URL(
+                    string: "discrobble://auth/discogs#error_code=access_denied&error_message=%20%20",
+                ),
+            ),
+        )
+
+        XCTAssertEqual(
+            result,
+            .failure(
+                AuthCallbackFailure(
+                    provider: .discogs,
+                    code: "access_denied",
+                    message: "The provider auth flow did not complete successfully."
+                )
+            )
+        )
+    }
+
     private func payloadCallback(from result: AuthCallbackResult) throws -> PendingAuthCallback {
         guard case let .payload(callback) = result else {
             XCTFail("Expected a payload callback result.")

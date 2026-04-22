@@ -7,10 +7,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -127,6 +130,7 @@ fun DiscrobbleAndroidShell(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProviderStatusCard(
     provider: AuthProvider,
@@ -180,37 +184,45 @@ private fun ProviderStatusCard(
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        text = "Received at: ${formatTimestamp(it.receivedAtMillis)}",
+                        text = "Received at: ${formatTimestamp(it.receivedAtEpochMillis)}",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
 
-            Row(
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isAuthInFlight,
+                onClick = onStartAuth,
+            ) {
+                Text(
+                    text = if (tokenSet == null) {
+                        "Connect ${provider.displayName}"
+                    } else {
+                        "Reconnect ${provider.displayName}"
+                    },
+                )
+            }
+
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Button(
-                    enabled = !isAuthInFlight,
-                    onClick = onStartAuth,
-                ) {
-                    Text(
-                        text = if (tokenSet == null) {
-                            "Connect ${provider.displayName}"
-                        } else {
-                            "Reconnect ${provider.displayName}"
-                        },
-                    )
-                }
-
                 if (tokenSet != null) {
-                    Button(onClick = onClearStoredToken) {
+                    Button(
+                        modifier = Modifier.widthIn(min = 160.dp),
+                        onClick = onClearStoredToken,
+                    ) {
                         Text("Clear Credentials")
                     }
                 }
 
                 if (pendingCallback != null) {
-                    Button(onClick = onClearPendingCallback) {
+                    Button(
+                        modifier = Modifier.widthIn(min = 160.dp),
+                        onClick = onClearPendingCallback,
+                    ) {
                         Text(
                             text = "Clear Callback",
                             textAlign = TextAlign.Center,
@@ -218,7 +230,10 @@ private fun ProviderStatusCard(
                     }
                 }
 
-                Button(onClick = onReload) {
+                Button(
+                    modifier = Modifier.widthIn(min = 160.dp),
+                    onClick = onReload,
+                ) {
                     Text("Reload Store")
                 }
             }
@@ -226,6 +241,7 @@ private fun ProviderStatusCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ShazamRecognitionCard(
     stateHolder: ShazamRecognitionStateHolder,
@@ -282,35 +298,42 @@ private fun ShazamRecognitionCard(
                 style = MaterialTheme.typography.bodySmall,
             )
 
-            Row(
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !stateHolder.recognitionState.isActive,
+                onClick = onStartRecognition,
+            ) {
+                Text(
+                    text = if (stateHolder.permissionStatus == ShazamMicrophonePermissionStatus.GRANTED) {
+                        "Listen for Match"
+                    } else {
+                        "Grant Mic + Listen"
+                    },
+                )
+            }
+
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Button(
-                    enabled = !stateHolder.recognitionState.isActive,
-                    onClick = onStartRecognition,
-                ) {
-                    Text(
-                        text = if (stateHolder.permissionStatus == ShazamMicrophonePermissionStatus.GRANTED) {
-                            "Listen for Match"
-                        } else {
-                            "Grant Mic + Listen"
-                        },
-                    )
-                }
-
-                Button(
+                    modifier = Modifier.widthIn(min = 160.dp),
                     enabled = stateHolder.recognitionState.isActive,
                     onClick = stateHolder::cancelRecognition,
                 ) {
                     Text("Cancel Listening")
                 }
 
-                Button(onClick = stateHolder::refreshPermissionStatus) {
+                Button(
+                    modifier = Modifier.widthIn(min = 160.dp),
+                    onClick = stateHolder::refreshPermissionStatus,
+                ) {
                     Text("Refresh Permission")
                 }
 
                 Button(
+                    modifier = Modifier.widthIn(min = 160.dp),
                     enabled = stateHolder.lastMatch != null || stateHolder.lastNoMatchAtMillis != null,
                     onClick = stateHolder::clearLastMatch,
                 ) {

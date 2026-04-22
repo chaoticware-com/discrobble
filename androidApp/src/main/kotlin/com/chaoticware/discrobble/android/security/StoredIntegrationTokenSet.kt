@@ -11,6 +11,7 @@ data class StoredIntegrationTokenSet(
     val expiresAt: String?,
 ) {
     override fun toString(): String {
-        return "StoredIntegrationTokenSet(provider=$provider, username=$username, accessToken=[REDACTED], accessSecret=[REDACTED], issuedAt=$issuedAt, expiresAt=$expiresAt)"
+        val redactedAccessSecret = if (accessSecret == null) "null" else "[REDACTED]"
+        return "StoredIntegrationTokenSet(provider=$provider, username=$username, accessToken=[REDACTED], accessSecret=$redactedAccessSecret, issuedAt=$issuedAt, expiresAt=$expiresAt)"
     }
 }

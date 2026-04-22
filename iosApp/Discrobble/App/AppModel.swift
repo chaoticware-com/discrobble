@@ -77,17 +77,18 @@ final class AppModel: ObservableObject {
 
     func reloadStoredState() {
         var refreshed: [AuthProvider: StoredIntegrationTokenSet] = [:]
+        var errors: [String] = []
 
-        do {
-            for provider in AuthProvider.allCases {
+        for provider in AuthProvider.allCases {
+            do {
                 refreshed[provider] = try tokenStore.loadTokenSet(for: provider)
+            } catch {
+                errors.append("\(provider.displayName): \(error.localizedDescription)")
             }
-
-            storedTokenSets = refreshed
-            lastErrorMessage = nil
-        } catch {
-            lastErrorMessage = error.localizedDescription
         }
+
+        storedTokenSets = refreshed
+        lastErrorMessage = errors.isEmpty ? nil : errors.joined(separator: "\n")
     }
 
     func applyTokenSet(_ tokenSet: StoredIntegrationTokenSet) {

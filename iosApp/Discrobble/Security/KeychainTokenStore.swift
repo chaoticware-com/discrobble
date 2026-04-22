@@ -53,7 +53,10 @@ final class KeychainTokenStore: TokenStoring {
         case errSecSuccess:
             return
         case errSecDuplicateItem:
-            let attributesToUpdate = [kSecValueData as String: data]
+            let attributesToUpdate: [String: Any] = [
+                kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+                kSecValueData as String: data,
+            ]
             let updateStatus = SecItemUpdate(baseQuery(for: tokenSet.provider) as CFDictionary, attributesToUpdate as CFDictionary)
 
             guard updateStatus == errSecSuccess else {
@@ -75,6 +78,7 @@ final class KeychainTokenStore: TokenStoring {
     private func baseQuery(for provider: AuthProvider) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecAttrService as String: Constants.service,
             kSecAttrAccount as String: "integration.\(provider.rawValue)"
         ]

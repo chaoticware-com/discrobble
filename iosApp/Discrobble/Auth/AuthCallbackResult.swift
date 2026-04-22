@@ -1,6 +1,6 @@
 import Foundation
 
-enum AuthCallbackResult {
+enum AuthCallbackResult: Equatable {
     case payload(PendingAuthCallback)
     case failure(AuthCallbackFailure)
 }

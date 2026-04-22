@@ -173,6 +173,7 @@
 			buildPhases = (
 				C00000000000000000000001 /* Sources */,
 				C00000000000000000000002 /* Frameworks */,
+				C00000000000000000000007 /* Validate Worker Base URL */,
 				C00000000000000000000003 /* Resources */,
 			);
 			buildRules = (
@@ -256,6 +257,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C00000000000000000000007 /* Validate Worker Base URL */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Validate Worker Base URL";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Discrobble-worker-url-validation.stamp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$CONFIGURATION\" = \"Debug\" ]; then\n  touch \"$SCRIPT_OUTPUT_FILE_0\"\n  exit 0\nfi\npython3 - <<'PY'\nimport os\nimport sys\nfrom urllib.parse import urlparse\n\nvalue = os.environ.get('DISCROBBLE_WORKER_BASE_URL', '').strip()\nif not value or '$(' in value:\n    sys.stderr.write('error: Release builds require DISCROBBLE_WORKER_BASE_URL to be injected as an absolute https URL.\\n')\n    sys.exit(1)\nparsed = urlparse(value)\nif parsed.scheme != 'https' or not parsed.hostname or parsed.hostname.lower() in {'localhost', '127.0.0.1', '::1', '10.0.2.2'}:\n    sys.stderr.write('error: DISCROBBLE_WORKER_BASE_URL must be a non-loopback https URL in non-Debug builds.\\n')\n    sys.exit(1)\nPY\ntouch \"$SCRIPT_OUTPUT_FILE_0\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C00000000000000000000001 /* Sources */ = {
@@ -362,7 +385,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DISCROBBLE_WORKER_BASE_URL = "";
+				DISCROBBLE_WORKER_BASE_URL = "$(inherited)";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Discrobble/Support/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

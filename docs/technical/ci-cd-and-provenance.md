@@ -118,6 +118,7 @@ Runs through GitHub Actions for internal mobile distribution.
 - Workflow files live only in `.github/workflows/`.
 - Actions must be pinned to immutable commit SHAs before the first production deployment.
 - Release tags must point to commits already contained in protected `main`.
+- Any future mobile beta or release workflow must inject `DISCROBBLE_WORKER_BASE_URL` as a non-loopback absolute `https` value for native release builds; the Android and iPhone shells now fail non-debug builds when that value is missing or local-dev only.
 - Reusable workflows are preferred when multiple pipelines share the same job logic.
 - Workflow changes are treated as security-sensitive changes and must receive maintainer review.
 
