@@ -8,6 +8,8 @@ import android.os.Process
 import com.chaoticware.discrobble.android.BuildConfig
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
@@ -34,30 +36,36 @@ class AndroidShazamRecognitionClient(
     private val developerToken: String = BuildConfig.DISCROBBLE_SHAZAM_DEVELOPER_TOKEN,
     private val shazamKitAarPresent: Boolean = BuildConfig.DISCROBBLE_SHAZAMKIT_AAR_PRESENT,
 ) {
-    @Volatile
-    private var activeAudioRecord: AudioRecord? = null
+    private val activeAudioRecord = AtomicReference<AudioRecord?>(null)
+    private val recognitionInFlight = AtomicBoolean(false)
 
     suspend fun recognizeFromMicrophone(
         onPhaseChanged: (ShazamRecognitionPhase) -> Unit,
     ): AndroidShazamRecognitionAttemptResult = withContext(Dispatchers.IO) {
-        if (!shazamKitAarPresent) {
-            return@withContext AndroidShazamRecognitionAttemptResult.Unavailable(
-                "Android ShazamKit requires Apple's local libs/shazamkit-android-release.aar. Add the SDK to the repo-root libs directory and rebuild the app.",
+        if (!recognitionInFlight.compareAndSet(false, true)) {
+            return@withContext AndroidShazamRecognitionAttemptResult.Failure(
+                "Another Android ShazamKit recognition attempt is already in progress.",
             )
         }
-
-        if (developerToken.isBlank()) {
-            return@withContext AndroidShazamRecognitionAttemptResult.Unavailable(
-                "Android ShazamKit requires a local discrobble.shazam.developerToken Gradle property before the spike can call Apple's catalog.",
-            )
-        }
-
-        val shazamKit = loadShazamKitObject()
-            ?: return@withContext AndroidShazamRecognitionAttemptResult.Unavailable(
-                "The Android ShazamKit classes were not on the app classpath after build. Rebuild after adding Apple's local AAR.",
-            )
 
         try {
+            if (!shazamKitAarPresent) {
+                return@withContext AndroidShazamRecognitionAttemptResult.Unavailable(
+                    "Android ShazamKit requires Apple's local libs/shazamkit-android-release.aar. Add the SDK to the repo-root libs directory and rebuild the app.",
+                )
+            }
+
+            if (developerToken.isBlank()) {
+                return@withContext AndroidShazamRecognitionAttemptResult.Unavailable(
+                    "Android ShazamKit requires a local discrobble.shazam.developerToken Gradle property before the spike can call Apple's catalog.",
+                )
+            }
+
+            val shazamKit = loadShazamKitObject()
+                ?: return@withContext AndroidShazamRecognitionAttemptResult.Unavailable(
+                    "The Android ShazamKit classes were not on the app classpath after build. Rebuild after adding Apple's local AAR.",
+                )
+
             withContext(Dispatchers.Main.immediate) {
                 onPhaseChanged(ShazamRecognitionPhase.PREPARING)
             }
@@ -118,21 +126,12 @@ class AndroidShazamRecognitionClient(
             )
         } finally {
             cancelActiveAttempt()
+            recognitionInFlight.set(false)
         }
     }
 
     fun cancelActiveAttempt() {
-        val audioRecord = activeAudioRecord ?: return
-        activeAudioRecord = null
-
-        runCatching {
-            if (audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                audioRecord.stop()
-            }
-        }
-        runCatching {
-            audioRecord.release()
-        }
+        releaseAudioRecord(activeAudioRecord.getAndSet(null) ?: return)
     }
 
     @SuppressLint("MissingPermission")
@@ -148,7 +147,10 @@ class AndroidShazamRecognitionClient(
         var bytesWritten = 0
         val originalPriority = Process.getThreadPriority(Process.myTid())
 
-        activeAudioRecord = audioRecord
+        if (!activeAudioRecord.compareAndSet(null, audioRecord)) {
+            audioRecord.release()
+            throw IllegalStateException("Another Android ShazamKit recorder was already active.")
+        }
 
         try {
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
@@ -175,10 +177,27 @@ class AndroidShazamRecognitionClient(
             runCatching {
                 Process.setThreadPriority(originalPriority)
             }
-            cancelActiveAttempt()
+            cancelActiveAttempt(audioRecord)
         }
 
         return@withContext destination
+    }
+
+    private fun cancelActiveAttempt(expectedAudioRecord: AudioRecord) {
+        if (activeAudioRecord.compareAndSet(expectedAudioRecord, null)) {
+            releaseAudioRecord(expectedAudioRecord)
+        }
+    }
+
+    private fun releaseAudioRecord(audioRecord: AudioRecord) {
+        runCatching {
+            if (audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                audioRecord.stop()
+            }
+        }
+        runCatching {
+            audioRecord.release()
+        }
     }
 
     private fun createAudioRecord(bufferSize: Int): AudioRecord {

@@ -46,10 +46,12 @@ class EncryptedPendingAuthAttemptStore(
         )
         val encryptedPayload = cipher.encrypt(attempt.toJson().toString())
 
-        sharedPreferences.edit()
-            .putString(payloadKey(provider), encryptedPayload.ciphertext)
-            .putString(ivKey(provider), encryptedPayload.iv)
-            .apply()
+        check(
+            sharedPreferences.edit()
+                .putString(payloadKey(provider), encryptedPayload.ciphertext)
+                .putString(ivKey(provider), encryptedPayload.iv)
+                .commit(),
+        ) { "Failed to persist pending auth attempt for ${provider.rawValue}." }
 
         return attempt
     }
@@ -66,10 +68,12 @@ class EncryptedPendingAuthAttemptStore(
     }
 
     override fun removeAttempt(provider: AuthProvider) {
-        sharedPreferences.edit()
-            .remove(payloadKey(provider))
-            .remove(ivKey(provider))
-            .apply()
+        check(
+            sharedPreferences.edit()
+                .remove(payloadKey(provider))
+                .remove(ivKey(provider))
+                .commit(),
+        ) { "Failed to clear pending auth attempt for ${provider.rawValue}." }
     }
 
     private fun payloadKey(provider: AuthProvider): String = "pending-auth.${provider.rawValue}.payload"
