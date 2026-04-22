@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         shazamRecognitionStateHolder.dispose()
+        if (!isChangingConfigurations) {
+            authShellStateHolder.dispose()
+        }
         super.onDestroy()
     }
 }

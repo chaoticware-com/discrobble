@@ -6,7 +6,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.chaoticware.discrobble.android.security.StoredIntegrationTokenSet
 import com.chaoticware.discrobble.android.security.TokenStore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AuthShellStateHolder(
@@ -15,6 +20,8 @@ class AuthShellStateHolder(
     private val lastfmAuthClient: LastfmAuthClient,
     private val tokenStore: TokenStore,
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     var authInFlightProviders by mutableStateOf<Set<AuthProvider>>(emptySet())
         private set
 
@@ -41,27 +48,44 @@ class AuthShellStateHolder(
                 is AuthCallbackResult.Payload -> {
                     val callback = result.callback
                     pendingCallbacks = pendingCallbacks + (callback.provider to callback)
+                    scope.launch {
+                        try {
+                            val tokenSet = withContext(Dispatchers.IO) {
+                                when (callback.provider) {
+                                    AuthProvider.LASTFM -> lastfmAuthClient.consumeCallback(callback)
+                                    AuthProvider.DISCOGS -> discogsAuthClient.consumeCallback(callback)
+                                }
+                            }
 
-                    runCatching {
-                        when (callback.provider) {
-                            AuthProvider.LASTFM -> lastfmAuthClient.consumeCallback(callback)
-                            AuthProvider.DISCOGS -> discogsAuthClient.consumeCallback(callback)
+                            applyTokenSet(tokenSet)
+                        } catch (throwable: Throwable) {
+                            if (throwable is CancellationException) {
+                                throw throwable
+                            }
+
+                            pendingCallbacks = pendingCallbacks - callback.provider
+                            authInFlightProviders = authInFlightProviders - callback.provider
+                            runCatching {
+                                withContext(Dispatchers.IO) {
+                                    clearAttempt(callback.provider)
+                                }
+                            }
+                            lastErrorMessage = throwable.message
                         }
-                    }.onSuccess { tokenSet ->
-                        applyTokenSet(tokenSet)
-                    }.onFailure { throwable ->
-                        pendingCallbacks = pendingCallbacks - callback.provider
-                        clearAttempt(callback.provider)
-                        authInFlightProviders = authInFlightProviders - callback.provider
-                        lastErrorMessage = throwable.message
                     }
                 }
 
                 is AuthCallbackResult.Failure -> {
                     pendingCallbacks = pendingCallbacks - result.failure.provider
                     authInFlightProviders = authInFlightProviders - result.failure.provider
-                    clearAttempt(result.failure.provider)
                     lastErrorMessage = result.failure.message
+                    scope.launch {
+                        runCatching {
+                            withContext(Dispatchers.IO) {
+                                clearAttempt(result.failure.provider)
+                            }
+                        }
+                    }
                 }
             }
         }.onFailure { throwable ->
@@ -72,67 +96,106 @@ class AuthShellStateHolder(
     suspend fun startAuth(provider: AuthProvider): String? {
         authInFlightProviders = authInFlightProviders + provider
 
-        return runCatching {
-            withContext(Dispatchers.IO) {
+        return try {
+            val authorizeUrl = withContext(Dispatchers.IO) {
                 when (provider) {
                     AuthProvider.LASTFM -> lastfmAuthClient.startAuth()
                     AuthProvider.DISCOGS -> discogsAuthClient.startAuth()
                 }
             }
-        }.onSuccess {
             lastErrorMessage = null
-        }.onFailure { throwable ->
+            authorizeUrl
+        } catch (throwable: Throwable) {
+            if (throwable is CancellationException) {
+                throw throwable
+            }
+
             authInFlightProviders = authInFlightProviders - provider
             lastErrorMessage = throwable.message
-        }.getOrNull()
+            null
+        }
     }
 
     fun reloadStoredState() {
-        runCatching {
-            buildMap {
-                AuthProvider.entries.forEach { provider ->
-                    tokenStore.loadTokenSet(provider)?.let { tokenSet ->
-                        put(provider, tokenSet)
+        scope.launch {
+            try {
+                val refreshed = withContext(Dispatchers.IO) {
+                    buildMap {
+                        AuthProvider.entries.forEach { provider ->
+                            tokenStore.loadTokenSet(provider)?.let { tokenSet ->
+                                put(provider, tokenSet)
+                            }
+                        }
                     }
                 }
+
+                storedTokenSets = refreshed
+                lastErrorMessage = null
+            } catch (throwable: Throwable) {
+                if (throwable is CancellationException) {
+                    throw throwable
+                }
+
+                lastErrorMessage = throwable.message
             }
-        }.onSuccess { refreshed ->
-            storedTokenSets = refreshed
-            lastErrorMessage = null
-        }.onFailure { throwable ->
-            lastErrorMessage = throwable.message
         }
     }
 
     fun applyTokenSet(tokenSet: StoredIntegrationTokenSet) {
-        runCatching {
-            tokenStore.saveTokenSet(tokenSet)
-        }.onSuccess {
-            authInFlightProviders = authInFlightProviders - tokenSet.provider
-            storedTokenSets = storedTokenSets + (tokenSet.provider to tokenSet)
-            pendingCallbacks = pendingCallbacks - tokenSet.provider
-            lastErrorMessage = null
-        }.onFailure { throwable ->
-            lastErrorMessage = throwable.message
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    tokenStore.saveTokenSet(tokenSet)
+                }
+
+                authInFlightProviders = authInFlightProviders - tokenSet.provider
+                storedTokenSets = storedTokenSets + (tokenSet.provider to tokenSet)
+                pendingCallbacks = pendingCallbacks - tokenSet.provider
+                lastErrorMessage = null
+            } catch (throwable: Throwable) {
+                if (throwable is CancellationException) {
+                    throw throwable
+                }
+
+                lastErrorMessage = throwable.message
+            }
         }
     }
 
     fun clearStoredToken(provider: AuthProvider) {
-        runCatching {
-            tokenStore.removeTokenSet(provider)
-        }.onSuccess {
-            storedTokenSets = storedTokenSets - provider
-            lastErrorMessage = null
-        }.onFailure { throwable ->
-            lastErrorMessage = throwable.message
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    tokenStore.removeTokenSet(provider)
+                }
+
+                storedTokenSets = storedTokenSets - provider
+                lastErrorMessage = null
+            } catch (throwable: Throwable) {
+                if (throwable is CancellationException) {
+                    throw throwable
+                }
+
+                lastErrorMessage = throwable.message
+            }
         }
     }
 
     fun clearPendingCallback(provider: AuthProvider) {
         authInFlightProviders = authInFlightProviders - provider
-        clearAttempt(provider)
         pendingCallbacks = pendingCallbacks - provider
         lastErrorMessage = null
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    clearAttempt(provider)
+                }
+            }
+        }
+    }
+
+    fun dispose() {
+        scope.cancel()
     }
 
     private fun clearAttempt(provider: AuthProvider) {

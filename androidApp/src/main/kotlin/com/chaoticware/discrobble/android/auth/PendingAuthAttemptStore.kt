@@ -3,6 +3,7 @@ package com.chaoticware.discrobble.android.auth
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
+import android.util.Log
 import com.chaoticware.discrobble.android.security.AndroidKeystoreCipher
 import org.json.JSONObject
 import java.security.KeyPairGenerator
@@ -77,7 +78,8 @@ class EncryptedPendingAuthAttemptStore(
             }
 
             attempt
-        }.getOrElse {
+        }.getOrElse { throwable ->
+            Log.w(TAG, "Failed to load pending auth attempt for ${provider.rawValue}.", throwable)
             clearStoredAttempt(provider, strict = false)
             null
         }
@@ -151,5 +153,6 @@ class EncryptedPendingAuthAttemptStore(
     private companion object {
         const val PENDING_AUTH_KEY_ALIAS = "discrobble.pending.auth"
         const val SHARED_PREFERENCES_NAME = "discrobble.pending.auth"
+        const val TAG = "PendingAuthAttemptStore"
     }
 }

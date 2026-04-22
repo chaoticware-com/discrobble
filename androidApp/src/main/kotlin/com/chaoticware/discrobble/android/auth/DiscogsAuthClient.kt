@@ -5,6 +5,7 @@ import android.util.Base64
 import com.chaoticware.discrobble.android.BuildConfig
 import com.chaoticware.discrobble.android.security.StoredIntegrationTokenSet
 import org.json.JSONObject
+import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
 import java.security.PublicKey
 import java.security.spec.PKCS8EncodedKeySpec
@@ -75,7 +76,7 @@ class DiscogsAuthClient(
         )
 
         val decryptedPayload = cipher.doFinal(ciphertext)
-        val payload = JSONObject(String(decryptedPayload))
+        val payload = JSONObject(String(decryptedPayload, StandardCharsets.UTF_8))
         val expiresAt = Instant.parse(payload.getString("expires_at"))
 
         require(expiresAt.isAfter(Instant.now())) {

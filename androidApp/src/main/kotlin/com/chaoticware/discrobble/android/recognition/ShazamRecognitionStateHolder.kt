@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -134,25 +135,35 @@ class ShazamRecognitionStateHolder(
         recognitionJob = scope.launch {
             recognitionState = ShazamRecognitionState.Preparing
 
-            when (val result = recognitionClient.recognizeFromMicrophone(this@ShazamRecognitionStateHolder::setPhase)) {
-                is AndroidShazamRecognitionAttemptResult.Match -> {
-                    lastMatch = result.snapshot
-                    lastNoMatchAtMillis = null
-                    recognitionState = ShazamRecognitionState.Matched
+            try {
+                when (val result = recognitionClient.recognizeFromMicrophone(this@ShazamRecognitionStateHolder::setPhase)) {
+                    is AndroidShazamRecognitionAttemptResult.Match -> {
+                        lastMatch = result.snapshot
+                        lastNoMatchAtMillis = null
+                        recognitionState = ShazamRecognitionState.Matched
+                    }
+
+                    is AndroidShazamRecognitionAttemptResult.NoMatch -> {
+                        lastNoMatchAtMillis = System.currentTimeMillis()
+                        recognitionState = ShazamRecognitionState.NoMatch
+                    }
+
+                    is AndroidShazamRecognitionAttemptResult.Failure -> {
+                        recognitionState = ShazamRecognitionState.Failed(result.message)
+                    }
+
+                    is AndroidShazamRecognitionAttemptResult.Unavailable -> {
+                        recognitionState = ShazamRecognitionState.Unavailable(result.message)
+                    }
+                }
+            } catch (throwable: Throwable) {
+                if (throwable is CancellationException) {
+                    throw throwable
                 }
 
-                is AndroidShazamRecognitionAttemptResult.NoMatch -> {
-                    lastNoMatchAtMillis = System.currentTimeMillis()
-                    recognitionState = ShazamRecognitionState.NoMatch
-                }
-
-                is AndroidShazamRecognitionAttemptResult.Failure -> {
-                    recognitionState = ShazamRecognitionState.Failed(result.message)
-                }
-
-                is AndroidShazamRecognitionAttemptResult.Unavailable -> {
-                    recognitionState = ShazamRecognitionState.Unavailable(result.message)
-                }
+                recognitionState = ShazamRecognitionState.Failed(
+                    throwable.message ?: throwable.javaClass.simpleName,
+                )
             }
         }
     }
